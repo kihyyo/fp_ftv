@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block content %}
+<form id="form_search" class="form-inline" style="text-align:left">
+  <div class="container-fluid">
+    <div class="row show-grid">
+      <span class="col-md-6">
+        <select id="order" name="order" class="form-control form-control-sm">
+          <option value="desc">최근순</option>
+          <option value="asc">오래된순</option>
+        </select>
+        <select id="option1" name="option1" class="form-control form-control-sm">
+          <option value="all">전체</option>
+          <option value="basic">basic</option>
+        </select>
+        <select id="option2" name="option2" class="form-control form-control-sm">
+          <option value="all">전체</option>
+          <option value="MOVE_BY_META">메타 이동</option>
+          <option value="REMOVE_BY_PRE">전처리 삭제</option>
+          <option value="MOVE_BY_PRE">전처리 이동</option>
+          <option value="MOVE_BY_NOMETA">에러 - NOMETA</option>
+          <option value="MOVE_BY_NOTV">에러 - NOTV</option>
+          <option value="MOVE_BY_SUB_X">에러 - SUB_X</option>
+        </select>
+      </span>
+      <span class="col-md-6">
+        <input id="keyword" name="keyword" class="form-control form-control-sm w-75" type="text" aria-label="Search">
+        {{ macros.m_button_group([['globalSearchSearchBtn', '검색'], ['globalSearchResetBtn', '리셋']])}}
+      </span>
+    </div>
+  </div>
+</form>
+<div id='page1'></div>
+{{ macros.m_hr_head_top() }}
+{{ macros.m_row_start('0') }}
+{{ macros.m_col(1,  macros.m_strong('ID'), 'center') }}
+{{ macros.m_col(10,  macros.m_strong('Info')) }}
+{{ macros.m_row_end() }}
+{{ macros.m_hr_head_bottom() }}
+<div id="list_div"></div>
+<div id='page2'></div>
+
+<script type="text/javascript">
+var last_list_option = "{{arg['vod_item_last_list_option']}}";
+
+$(document).ready(function(){
+  make_list(null);
+  tmp = last_list_option.split('|');
+  if (tmp.length == 5) {
+    $("#order").val(tmp[0]);
+    $("#keyword").val(tmp[2]);
+    $("#option1").val(tmp[3]);
+    $("#option2").val(tmp[4]);
+    globalRequestSearch(tmp[1]);
+  } else {
+    globalRequestSearch('1');
+  }
+});
+
+$("body").on('change', '#order', function(e){
+  globalRequestSearch(1);
+});
+
+$("body").on('change', '#option1', function(e){
+  globalRequestSearch(1);
+});
+
+$("body").on('change', '#option2', function(e){
+  globalRequestSearch(1);
+});
+
+function make_list(data) {
+  if (data == null) {
+    str = '<h4>로딩중..</h4>';
+  } else {
+    str = '';
+    for (i in data) {
+      str += j_row_start();
+      tmp = '';
+      str += j_col(1, data[i].id, 'center');
+     
+      right = j_row_start();
+      tmp = j_info_text_left("생성", data[i].created_time, 3, 9);
+      tmp += j_info_text_left("상태", data[i].status, 3, 9);
+      tmp += j_info_text_left("DRY", data[i].is_dry ? "테스트":"이동", 3, 9);
+      tmp += j_info_text_left("메타", data[i].meta_find ? "매칭":text_color("메타 없음"), 3, 9);
+      tmp += j_info_text_left("모듈", data[i].call_module, 3, 9);
+      
+      right += j_col(3, tmp);
+
+
+      tmp = '';
+      tmp += j_info_text_left("경로", data[i].foldername, 2, 10);
+      tmp += j_info_text_left("파일명", data[i].filename_original, 2, 10);
+      tmp += j_info_text_left("최종 경로", data[i].result_folder, 2, 10);
+      if (data[i].filename_original != data[i].result_filename) {
+        tmp += j_info_text_left("최종 파일명", text_color(data[i].result_filename), 2, 10);
+      } else {
+        tmp += j_info_text_left("최종 파일명", data[i].result_filename, 2, 10);
+      }
+      right += j_col(9, tmp);
+
+      right += j_row_end();
+
+      right += j_row_start(0);
+      tmp = ''
+      tmp += j_button('globalDbDeleteItemBtn', 'DB 삭제', {'id':data[i].id}, 'danger', true, true);
+      tmp += j_button('globalJsonBtn', 'JSON', {'idx':i}, 'info', true, true);
+      /*
+      tmp += j_button('self_search_btn', '목록 검색', {'name':data[i].meta_title});
+      tmp += j_button('blacklist_genre_btn', '제외 장르 추가', {'genre':data[i].meta_genre});
+      tmp += j_button('whitelist_genre_btn', '포함 장르 추가', {'genre':data[i].meta_genre});
+      tmp += j_button('blacklist_program_btn', '제외 프로그램 추가', {'program':data[i].meta_title});
+      tmp += j_button('whitelist_program_btn', '포함 프로그램 추가', {'program':data[i].meta_title});
+      */
+      tmp = j_button_group(tmp)
+      right += j_col(12, tmp)
+      right += j_row_end();
+      str += j_col(11, right)
+      str += j_row_end();
+      if (i != data.length -1) str += j_hr();
+    }
+  }
+  $("#list_div").html(str);
+}
+</script>    
+{% endblock %}
