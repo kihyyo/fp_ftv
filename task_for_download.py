@@ -240,13 +240,14 @@ class Task(object):
                     exec(condition_name['코드'], mod.__dict__)
                     if mod.check(db_item):
                         program_folder = os.path.join(condition_name['타겟루트'], condition_name['타겟포맷'].format(**Task.get_folder_folder(db_item)))
+                        manual_yaml = os.path.join(condition_name['타겟루트'], condition_name['YAML경로'].format(**Task.get_folder_folder(db_item)))
                     else:
                         continue
                 except Exception as e: 
                     P.logger.error(f'Exception:{str(e)}')
                     P.logger.error(traceback.format_exc())
 
-        return program_folder
+        return program_folder, manual_yaml
 
 
     def make_season(config, db_item):
@@ -294,7 +295,7 @@ class Task(object):
         source_path = os.path.join(db_item.foldername, db_item.filename_original)
         tmp = os.path.splitext(source_path)
         subtitle_list = []
-        for ext in ['.smi', '.srt', '.ko.srt', '.ass', '.ko.ass']:
+        for ext in ['.smi', '.srt', '.ko.srt', '.kor.srt', '.ass', '.ko.ass', 'kor.ass']:
             _ = os.path.join(tmp[0] + ext)
             if os.path.exists(_):
                 subtitle_list.append(_)
@@ -310,9 +311,10 @@ class Task(object):
             year_tmp = entity.data['meta']['info']['year']
             if year_tmp == 0 or year_tmp == '0':
                 year_tmp = ''
-            if Task.manual_target(config, db_item) != None:
+            if Task.manual_target(config, db_item)[0] != None:
                 db_item.manual_target = True
-                program_folder = Task.manual_target(config, db_item)
+                program_folder = Task.manual_target(config, db_item)[0]
+                db_item.yaml_path = Task.manual_target(config, db_item)[1]
             else:
                 program_folder = config['타겟 폴더 구조'].format(**default_folder_folder)
             tmps = program_folder.replace('(1900)', '').replace('()', '').replace('[]', '').strip()
@@ -410,10 +412,10 @@ class Task(object):
         
     def get_yaml(db_item):
         if db_item.manual_target == True:
-            yaml_path = os.path.dirname(db_item.result_folder)
+            yaml_path = db_item.yaml_path
         else:
             yaml_path = os.path.join(db_item.target_folder, P.ModelSetting.get('basic_yaml_path').format(**Task.get_folder_folder(db_item)))
-        items = ModelFPFtvItem.yaml_time(os.path.dirname(db_item.result_folder))
+        items = ModelFPFtvItem.yaml_time(yaml_path)
         db_item.yaml_path = yaml_path
         if not os.path.exists(os.path.join(yaml_path, 'show.yaml')):
             if len(items) > 0:
