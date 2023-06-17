@@ -6,14 +6,14 @@ from datetime import datetime
 from .setup import P
 from support import SupportFile, SupportString
 from support_site import SiteTmdbFtv
-
+from .site_tmdb import tmdb
 logger = P.logger
 
 EXTENSION = 'mp4|avi|mkv|ts|wmv|m2ts|smi|srt|ass|m4v|flv|asf|mpg|ogm'
 
 REGEXS = [
-    r'^(?P<name>.*?)\.([sS](?P<sno>\d+))?[eE](?P<no>\d+)\.(?P<etc>.*?)?\.?(?P<quality>\d{3,4})[p|P]\.(?P<streaming>AMZN|ATVP|NF|DSNP|HMAX|PMTP|HULU|STAN|iP)?\.?(?i)(WEB-DL|WEBRip|WEB|bluray)?\.?(?i)(?P<audio>DDPA|DDP|DD|AC3|AAC|DTS-HD|DTS|TrueHD)?(?P<channel>2.0|5.1|7.1)?\.?(?P<etc2>.*?)(\-(?P<release>.*?))?(?i)(?P<container>\.mkv|\.mp4|\.avi|\.flv|\.wmv|\.ts)$',
-    r'^(?P<name>.*?)([sS](?P<sno>\d+))?[eE](?P<no>\d+)(.*?)(?i)(?P<container>\.mkv|\.mp4|\.avi|\.flv|\.wmv|\.ts)$', 
+    r'^(?P<name>.*?)\.([sS](?P<sno>\d+))?[eE](?P<no>\d+)\.(?P<etc>.*?)?\.?(?P<quality>\d{3,4})[p|P]\.(?P<streaming>AMZN|ATVP|NF|DSNP|HMAX|PMTP|HULU|STAN|iP)?\.?(?i)(WEB-DL|WEBRip|WEB|bluray)?\.?(?i)(?P<audio>DDPA|DDP|DD|AC3|AAC|DTS-HD|DTS|TrueHD)?(?P<channel>2.0|5.1|7.1)?\.?(?P<etc2>.*?)(\-(?P<release>.*?))?(?i)(?P<container>\.mkv|\.mp4|\.srt|\.ass)$',
+    r'^(?P<name>.*?)([sS](?P<sno>\d+))?[eE](?P<no>\d+)(.*?)(?i)(?P<container>\.mkv|\.mp4|\.avi|\.flv|\.wmv|\.ts|\.srt|\.ass)$', 
     r'^(?P<name>.*?)\.([sS](?P<sno>\d+))?[eE](?P<no>\d+)(\-E\d{1,4})?\.?(?P<a>.*?\.)?(?P<date>\d{6})\.(?P<etc>.*?)((?P<quality>\d+)[p|P])?(\-?(?P<release>.*?))?(\.(.*?))?$'
 ]
 
@@ -108,9 +108,19 @@ class EntityFtv(object):
         self.data['filename']['name'] = name
 
 
-    def find_meta(self):
-        from .site_tmdb import tmdb
-        tmdb_code = tmdb.search(self.data['filename']['name'])
+    def find_meta(self, keyword=False):
+        if keyword == False:
+            keyword = self.data['filename']['name']
+            year = None
+            match = re.search('\d{4}', keyword)
+            if match and 1950 < int(match.group()) < datetime.date.today().year + 1:
+                keyword = keyword.replace(match.group(), '').strip()
+                year = match.group()
+        logger.debug('검색어: %s', keyword)
+        if year == None:
+            tmdb_code = tmdb.search(keyword)
+        else:
+            tmdb_code = tmdb.search(keyword, year)
         try:
             if tmdb_code != '':
                 tmdb_code = 'FT'+str(tmdb_code)
@@ -121,5 +131,8 @@ class EntityFtv(object):
         except Exception as e:
             logger.error(f"Exception:{str(e)}")
             logger.error(traceback.format_exc())
+
+
+        
 
 
