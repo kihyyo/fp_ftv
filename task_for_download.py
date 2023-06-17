@@ -230,7 +230,7 @@ class Task(object):
                         manual_yaml = os.path.join(condition_name['타겟루트'], condition_name['YAML경로'].format(**Task.get_folder_folder(db_item)))
                         return program_folder, manual_yaml
                     else:
-                        continue
+                        return None
                 except Exception as e: 
                     P.logger.error(f'Exception:{str(e)}')
                     P.logger.error(traceback.format_exc())
