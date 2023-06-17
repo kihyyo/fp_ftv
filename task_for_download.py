@@ -491,6 +491,8 @@ class Task(object):
                         else:
                             os.remove(target_path)
                             shutil.move(source_path, target_path)
+                    else:
+                        shutil.move(source_path, target_path)
             except Exception as e:
                 logger.debug(f"Exception:{str(e)}")
                 logger.debug(traceback.format_exc())
