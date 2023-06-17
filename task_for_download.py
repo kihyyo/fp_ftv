@@ -73,6 +73,8 @@ class Task(object):
                             elif os.path.splitext(filename)[1] in ['.srt', '.ass'] and os.path.isfile(os.path.join(db_item.foldername, db_item.filename_original)) and entity.data['meta']['find']:
                                 if Task.get_video(config, db_item, base) != True:
                                     shutil.move(os.path.join(base,db_item.filename_pre),os.path.join(config['경로 설정']['sub'],db_item.filename))
+                                else:
+                                    continue
                         else:
                             db_item.status = "MOVE_BY_NOTV"
                             db_item.result_folder = config['경로 설정']['no_tv'].format(error=error)
@@ -110,7 +112,7 @@ class Task(object):
                         P.logger.error(f"Exception:{e}")
                         P.logger.error(traceback.format_exc())
                     finally:
-                        if db_item != None:
+                        if db_item != None and os.path.splitext(filename)[1] in ['.mkv', '.mp4']:
                             db_item.save()
                             if F.config['use_celery']:
                                 self.update_state(state='PROGRESS', meta=db_item.as_dict())
@@ -235,7 +237,7 @@ class Task(object):
                     P.logger.error(f'Exception:{str(e)}')
                     P.logger.error(traceback.format_exc())
 
-
+       
 
 
     def make_season(config, db_item):
@@ -304,8 +306,8 @@ class Task(object):
                 program_folder = Task.manual_target(config, db_item)[0]
                 db_item.yaml_path = Task.manual_target(config, db_item)[1]
             else:
-                program_folder = config['타겟 폴더 구조'].format(**default_folder_folder)
                 db_item.manual_target = False
+                program_folder = config['타겟 폴더 구조'].format(**default_folder_folder)
             tmps = program_folder.replace('(1900)', '').replace('()', '').replace('[]', '').strip()
             tmps = re.sub("\s{2,}", ' ', tmps) 
             tmps = re.sub("/{2,}", '/', tmps) 
@@ -572,6 +574,5 @@ class Task(object):
 
         except Exception as e:
             logger.error(f"Exception:{str(e)}")
-            logger.error(traceback.format_exc())               
-                        
-
+            logger.error(traceback.format_exc())                    
+                
