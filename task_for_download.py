@@ -228,13 +228,14 @@ class Task(object):
                     if mod.check(db_item):
                         program_folder = os.path.join(condition_name['타겟루트'], condition_name['타겟포맷'].format(**Task.get_folder_folder(db_item)))
                         manual_yaml = os.path.join(condition_name['타겟루트'], condition_name['YAML경로'].format(**Task.get_folder_folder(db_item)))
+                        return program_folder, manual_yaml
                     else:
                         continue
                 except Exception as e: 
                     P.logger.error(f'Exception:{str(e)}')
                     P.logger.error(traceback.format_exc())
 
-        return program_folder, manual_yaml
+
 
 
     def make_season(config, db_item):
