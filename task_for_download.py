@@ -36,7 +36,8 @@ class Task(object):
                     if P.ModelSetting.get_bool(f"{call_module}_task_stop_flag"):
                         P.logger.warning("사용자 중지")
                         return 'stop'
-                    try:                      
+                    try:
+                        logger.debug('파일이름: %s', original_filename)
                         db_item = ModelFPFtvItem(call_module, original_filename, base, is_dry)
                         filename = original_filename
                         #logger.warning(f"{idx} / {len(files)} : {filename}")
