@@ -302,7 +302,7 @@ class Task(object):
                 year_tmp = ''
             if Task.manual_target(config, db_item) != None:
                 db_item.manual_target = True
-                program_folder = Task.manual_target(config, db_item)[0]
+                program_folder = Task.manual_target(config, db_item)
             else:
                 db_item.manual_target = False
                 program_folder = config['타겟 폴더 구조'].format(**default_folder_folder)
