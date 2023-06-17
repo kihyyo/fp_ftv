@@ -431,10 +431,7 @@ class Task(object):
 
         
     def get_yaml(db_item):
-        if db_item.manual_target == True:
-            yaml_path = db_item.yaml_path
-        else:
-            yaml_path = os.path.join(db_item.target_folder, P.ModelSetting.get('basic_yaml_path').format(**Task.get_folder_folder(db_item)))
+        yaml_path = os.path.join(db_item.target_folder, P.ModelSetting.get('basic_yaml_path').format(**Task.get_folder_folder(db_item)))
         items = ModelFPFtvItem.yaml_time(yaml_path)
         db_item.yaml_path = yaml_path
         if not os.path.exists(os.path.join(yaml_path, 'show.yaml')):
