@@ -23,6 +23,7 @@
     no_tv : "{error}/no_tv"       # tv 형식이 아닌 경우 (회차를 찾을 수 없을 때)
     no_meta : "{error}/no_meta"   # 메타 매칭이 실패할 경우 파일이 이동할 error 폴더내의 폴더명
     sub_x : "{error}/sub_x/{TITLE_FIRST_CHAR}/{TITLE} ({YEAR})/{SEASON}"  # 자막이 없을때 이동할 경로
+    sub : "{error}/sub"
     test : "{error}/test"         # 이 외는 이동 폴더에 사용할 규칙
 
 
@@ -46,9 +47,6 @@
     
     #폴더삭제: # 경로에 폴더이름이 있으면 삭제. 대소문자 구분
       #- 'Subs' #rarbg 자막파일들
-
-    EXTRA 폴더: # 경로에 폴더 이름이 있으면 처리하지 않고 db 처리 결과를 따름.
-      - "EXTRA"
 
     이동:  # 정규식 매칭시 이동. 이동폴더는 foldername에서 설정 혹은 절대경로
       test:
@@ -78,7 +76,7 @@
   # 리먹스같은 장르로 구별하기 힘든 것들 수동으로 지정하면 된다. 
   # 타겟 수동 설정: 
   #   이름: "타겟조건 리먹스"
-  #   타겟루트: "/mnt/gdrive"
+  #   타겟루트: "/mnt/gdrive/remux"
   #   타겟포맷: "{TITLE_FIRST_CHAR}/{TITLE} ({YEAR})"
   #   코드: |
   #     def check(db_item):
@@ -127,7 +125,7 @@
     대만 : 대만드라마
 
   #PLEX_MATE_SCAN:
-  #  - URL: "http://localhost:8888"
+  #  - URL: "http://localhost:9999" #FF 주소
   #    경로변경:
   #      - 소스: "L:"
   #        타겟: "H:\\내 드라이브"
