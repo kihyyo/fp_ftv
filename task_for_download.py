@@ -326,16 +326,16 @@ class Task(object):
                             db_item.include_kor_file_subtitle = True
                         else:
                             db_item.include_kor_file_subtitle = False
-                    if db_item.include_kor_file_subtitle == True or db_item.include_kor_subtitle == True or db_item.is_vod == True:
+                    if db_item.include_kor_file_subtitle == True or db_item.include_kor_subtitle == True or db_item.is_vod == True or db_item.include_kor_audio == True :
                         db_item.result_folder = program_folder
                         db_item.result_filename = target_filename
                         db_item.status = "MOVE_BY_META"
                         if db_item.include_kor_file_subtitle == True :
                             for source_subtitle in subtitle_list:
                                 Task.dedupe_move(source_subtitle, program_folder, os.path.basename(source_subtitle))
+                        Task.dedupe_move(source_path, program_folder, target_filename)
                         if P.ModelSetting.get_bool('basic_make_show_yaml'):
                             Task.get_yaml(db_item)
-                        Task.dedupe_move(source_path, program_folder, target_filename)
 
                     else:
                         sub_x_folder = config['경로 설정']['sub_x'].format(**default_folder_folder)
