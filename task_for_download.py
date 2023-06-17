@@ -229,7 +229,6 @@ class Task(object):
                     exec(condition_name['코드'], mod.__dict__)
                     if mod.check(db_item):
                         program_folder = os.path.join(condition_name['타겟루트'], condition_name['타겟포맷'].format(**Task.get_folder_folder(db_item)))
-                        manual_yaml = os.path.join(condition_name['타겟루트'], condition_name['YAML경로'].format(**Task.get_folder_folder(db_item)))
                         return program_folder, manual_yaml
                     else:
                         continue
@@ -304,7 +303,6 @@ class Task(object):
             if Task.manual_target(config, db_item) != None:
                 db_item.manual_target = True
                 program_folder = Task.manual_target(config, db_item)[0]
-                db_item.yaml_path = Task.manual_target(config, db_item)[1]
             else:
                 db_item.manual_target = False
                 program_folder = config['타겟 폴더 구조'].format(**default_folder_folder)
