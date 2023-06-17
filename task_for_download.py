@@ -230,7 +230,7 @@ class Task(object):
                         manual_yaml = os.path.join(condition_name['타겟루트'], condition_name['YAML경로'].format(**Task.get_folder_folder(db_item)))
                         return program_folder, manual_yaml
                     else:
-                        return None
+                        continue
                 except Exception as e: 
                     P.logger.error(f'Exception:{str(e)}')
                     P.logger.error(traceback.format_exc())
@@ -299,7 +299,7 @@ class Task(object):
             year_tmp = entity.data['meta']['info']['year']
             if year_tmp == 0 or year_tmp == '0':
                 year_tmp = ''
-            if Task.manual_target(config, db_item)[0] != None:
+            if Task.manual_target(config, db_item) != None:
                 db_item.manual_target = True
                 program_folder = Task.manual_target(config, db_item)[0]
                 db_item.yaml_path = Task.manual_target(config, db_item)[1]
