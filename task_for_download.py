@@ -229,7 +229,7 @@ class Task(object):
                     exec(condition_name['코드'], mod.__dict__)
                     if mod.check(db_item):
                         program_folder = os.path.join(condition_name['타겟루트'], condition_name['타겟포맷'].format(**Task.get_folder_folder(db_item)))
-                        return program_folder, manual_yaml
+                        return program_folde
                     else:
                         continue
                 except Exception as e: 
