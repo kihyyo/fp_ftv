@@ -305,6 +305,7 @@ class Task(object):
                 db_item.yaml_path = Task.manual_target(config, db_item)[1]
             else:
                 program_folder = config['타겟 폴더 구조'].format(**default_folder_folder)
+                db_item.manual_target = False
             tmps = program_folder.replace('(1900)', '').replace('()', '').replace('[]', '').strip()
             tmps = re.sub("\s{2,}", ' ', tmps) 
             tmps = re.sub("/{2,}", '/', tmps) 
