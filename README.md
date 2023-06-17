@@ -23,9 +23,5 @@
 ----
 
 ## yaml
-
-![](https://cdn.discordapp.com/attachments/631112094015815681/857275999913377822/unknown.png)
-
-  - data/db 폴더에 fileprocess_ftv_basic.yaml 파일과 fileprocess_ftv_simple.yaml 자동생성
-  - 세부 설정을 원할 경우 파일의 주석부분을 확인하여 옵션 추가.
+ktv 설정과 비슷함
 
