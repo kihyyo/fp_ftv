@@ -2,7 +2,7 @@ import imp
 import json
 import os
 import re
-import traceback, shutil
+import traceback, shutil, subprocess, copy, time
 import requests
 from datetime import datetime
 from support import SupportDiscord, SupportFile, SupportString, SupportYaml
@@ -37,7 +37,7 @@ class Task(object):
                         P.logger.warning("사용자 중지")
                         return 'stop'
                     try:
-                        logger.debug('파일이름: %s', original_filename)
+                        logger.debug('파일이름: %s', original_filename)                      
                         db_item = ModelFPFtvItem(call_module, original_filename, base, is_dry)
                         filename = original_filename
                         #logger.warning(f"{idx} / {len(files)} : {filename}")
@@ -113,35 +113,51 @@ class Task(object):
                         P.logger.error(f"Exception:{e}")
                         P.logger.error(traceback.format_exc())
                     finally:
-                        if db_item != None and os.path.splitext(filename)[1] in ['.mkv', '.mp4']:
+                        if db_item != None and filename != None and os.path.splitext(original_filename)[1] in ['.mkv', '.mp4']:
                             db_item.save()
-                            if F.config['use_celery']:
-                                self.update_state(state='PROGRESS', meta=db_item.as_dict())
-                            else:
-                                P.logic.get_module(call_module.replace('_dry', '')).receive_from_task(db_item.as_dict(), celery=False)
+                        if F.config['use_celery']:
+                            self.update_state(state='PROGRESS', meta=db_item.as_dict())
+                        else:
+                            P.logic.get_module(call_module.replace('_dry', '')).receive_from_task(db_item.as_dict(), celery=False)
                         #return 'wait'
                       
-                if base != source and len(os.listdir(base)) == 0 :
-                    try:
-                        if is_dry == False:
-                            os.rmdir(base)
-                    except Exception as e: 
-                        P.logger.error(f"Exception:{e}")
-                        P.logger.error(traceback.format_exc())
 
-            for base, dirs, files in os.walk(source):
-                if base != source and len(dirs) == 0 and len(files) == 0:
-                    try:
-                        if is_dry == False:
-                            os.rmdir(base)
-                    except Exception as e: 
-                        P.logger.error(f"Exception:{e}")
-                        P.logger.error(traceback.format_exc())
+            if is_dry == False and base != source :
+                Task.empty_folder_remove(source)
             
 
         P.logger.debug(f"task {call_module} 종료")
         return 'wait'
 
+    def empty_folder_remove(base_path):
+        try:
+            for root, dirs, files in os.walk(base_path, topdown=False):
+                for name in dirs:
+                    try:
+                        folder_path = os.path.join(root, name)
+                        match = re.search('[sS]\d{1,3}[eE]{1,3}', folder_path)
+                        if match:
+                            if len(os.listdir(folder_path)) == 0 and (time.time() - os.path.getmtime(folder_path) > 1800):
+                                logger.debug('빈폴더 삭제:%s', folder_path)
+                                try:
+                                    os.rmdir(folder_path)
+                                except:
+                                    logger.debug('삭제 오류:%s', folder_path)
+                                    pass
+                        else:
+                            if len(os.listdir(folder_path)) == 0 and (time.time() - os.path.getmtime(folder_path) > 7600):
+                                logger.debug('빈폴더 삭제:%s', folder_path)
+                                try:
+                                    os.rmdir(folder_path)
+                                except:
+                                    logger.debug('삭제 오류:%s', folder_path)
+                                    pass
+                    except:
+                        pass
+            logger.debug('파일처리 종료')
+        except Exception as e:
+            logger.error('Exception:%s', e)
+            logger.error(traceback.format_exc())
 
     def process_pre(config, db_item, is_dry):
         filename = db_item.filename_original
@@ -168,6 +184,7 @@ class Task(object):
                             try:
                                 db_item.status = 'REMOVE_BY_PRE'
                                 if is_dry == False:
+                                    logger.debug('삭제: %s', db_item.filename_original)
                                     os.remove(os.path.join(db_item.foldername, db_item.filename_original))
                             except Exception as e: 
                                 P.logger.error(f"Exception:{e}")
@@ -244,6 +261,8 @@ class Task(object):
         season = None
         season_no = int(db_item.season_no)
         season_list = config.get('시즌 설정')
+        global split_season
+        split_season = len(season_list) + 1
         if season_list != None:
             for condition_name in season_list:
                 try:
@@ -292,62 +311,66 @@ class Task(object):
             else:
                 continue
         return subtitle_list
-    
-
+        
     def move_file(config, entity, db_item, target_folder, is_dry):
-        source_path = os.path.join(db_item.foldername, db_item.filename_original)
-        default_folder_folder = Task.get_folder_folder(db_item)
-        if True:
-            year_tmp = entity.data['meta']['info']['year']
-            if year_tmp == 0 or year_tmp == '0':
-                year_tmp = ''
-            if Task.manual_target(config, db_item) != None:
-                db_item.manual_target = True
-                program_folder = Task.manual_target(config, db_item)
-            else:
-                db_item.manual_target = False
-                program_folder = config['타겟 폴더 구조'].format(**default_folder_folder)
-            tmps = program_folder.replace('(1900)', '').replace('()', '').replace('[]', '').strip()
-            tmps = re.sub("\s{2,}", ' ', tmps) 
-            tmps = re.sub("/{2,}", '/', tmps) 
-            tmps = tmps.split('/')
-            program_folder = os.path.join(target_folder, *tmps)
-            target_filename = entity.data['filename']['original']
-            if target_filename is not None:
-                if is_dry == False:
-                    if config['hard_subtitle'] != None:
-                        for vod in config['hard_subtitle']:
-                            if vod.lower() in db_item.filename_original.lower():
-                                db_item.is_vod = True 
+        try:
+            if True:
+                source_path = os.path.join(db_item.foldername, db_item.filename_original)
+                default_folder_folder = Task.get_folder_folder(db_item)
+                year_tmp = entity.data['meta']['info']['year']
+                if year_tmp == 0 or year_tmp == '0':
+                    year_tmp = ''
+                if Task.manual_target(config, db_item) != None:
+                    db_item.manual_target = True
+                    program_folder = Task.manual_target(config, db_item)
+                else:
+                    db_item.manual_target = False
+                    program_folder = config['타겟 폴더 구조'].format(**default_folder_folder)
+                tmps = program_folder.replace('(1900)', '').replace('()', '').replace('[]', '').strip()
+                tmps = re.sub("\s{2,}", ' ', tmps) 
+                tmps = re.sub("/{2,}", '/', tmps) 
+                tmps = tmps.split('/')
+                gds_folder = config['경로 설정']['gds'].format(**default_folder_folder)
+                program_folder = os.path.join(target_folder, *tmps)
+                target_filename = entity.data['filename']['original']
+                if target_filename is not None:
+                    if is_dry == False:
+                        if config['hard_subtitle'] != None:
+                            for vod in config['hard_subtitle']:
+                                if vod.lower() in db_item.filename_original.lower():
+                                    db_item.is_vod = True 
+                                else:
+                                    db_item.is_vod = False
+                        if db_item.include_kor_subtitle != True and db_item.is_vod != True:
+                            subtitle_list = Task.check_subtitle_file(db_item)
+                            if len(subtitle_list) > 0:
+                                db_item.file_subtitle_count = len(subtitle_list)
+                                db_item.include_kor_file_subtitle = True
                             else:
-                                db_item.is_vod = False
-                    if db_item.include_kor_subtitle != True and db_item.is_vod != True:
-                        subtitle_list = Task.check_subtitle_file(db_item)
-                        if len(subtitle_list) > 0:
-                            db_item.file_subtitle_count = len(subtitle_list)
-                            db_item.include_kor_file_subtitle = True
-                        else:
-                            db_item.include_kor_file_subtitle = False
-                    if db_item.include_kor_file_subtitle == True or db_item.include_kor_subtitle == True or db_item.is_vod == True or db_item.include_kor_audio == True :
-                        db_item.result_folder = program_folder
-                        db_item.result_filename = target_filename
-                        db_item.status = "MOVE_BY_META"
-                        if db_item.include_kor_file_subtitle == True :
-                            for source_subtitle in subtitle_list:
-                                Task.dedupe_move(source_subtitle, program_folder, os.path.basename(source_subtitle))
-                        Task.dedupe_move(source_path, program_folder, target_filename)
-                        if P.ModelSetting.get_bool('basic_make_show_yaml'):
-                            Task.get_yaml(db_item)
+                                db_item.include_kor_file_subtitle = False
+                        if db_item.include_kor_file_subtitle == True or db_item.include_kor_subtitle == True or db_item.is_vod == True or db_item.include_kor_audio == True :
+                            db_item.result_folder = program_folder
+                            db_item.result_filename = target_filename
+                            db_item.status = "MOVE_BY_META"
+                            if db_item.include_kor_file_subtitle == True :
+                                for source_subtitle in subtitle_list:
+                                    Task.dedupe_move(source_subtitle, program_folder, os.path.basename(source_subtitle))
+                            Task.dedupe_move(source_path, program_folder, target_filename)
+                            if P.ModelSetting.get_bool('basic_make_show_yaml'):
+                                Task.get_yaml(db_item)
 
-                    else:
-                        sub_x_folder = config['경로 설정']['sub_x'].format(**default_folder_folder)
-                        db_item.result_folder = sub_x_folder
-                        db_item.result_filename = target_filename
-                        db_item.status = "MOVE_SUB_X"
-                        Task.dedupe_move(source_path, sub_x_folder, target_filename)
-                        
-            else:
-                P.logger.error(f"타겟 파일 None")
+                        else:
+                            sub_x_folder = config['경로 설정']['sub_x'].format(**default_folder_folder)
+                            db_item.result_folder = sub_x_folder
+                            db_item.result_filename = target_filename
+                            db_item.status = "MOVE_SUB_X"
+                            Task.dedupe_move(source_path, sub_x_folder, target_filename)
+                            
+                else:
+                    P.logger.error(f"타겟 파일 None")
+        except Exception as e: 
+            P.logger.error(f"Exception:{e}")
+            P.logger.error(traceback.format_exc())
 
 
     def get_folder_folder(db_item):
@@ -421,6 +444,23 @@ class Task(object):
             if code != None:
                 show_data = yaml_utils.YAMLUTILS.get_data(code)
                 if len(show_data) > 0:
+                    season_data = []
+                    for k in range(len(show_data['seasons'])):
+                        i = int(show_data['seasons'][k]['index'])
+                        for j in range(split_season):
+                            episode_data = copy.deepcopy(show_data['seasons'][k]['episodes'])
+                            season_no = int(int(j)*100 + i )                                  
+                            season = {
+                                'index' : season_no,
+                                'episodes' : episode_data
+                            }
+                            season_data.append(season)
+                    try:
+                        del show_data['title']
+                    except:
+                        pass
+                    show_data['seasons'] = season_data
+
                     return show_data
                 else:
                     return
@@ -435,49 +475,51 @@ class Task(object):
         yaml_path = os.path.join(db_item.target_folder, P.ModelSetting.get('basic_yaml_path').format(**Task.get_folder_folder(db_item)))
         items = ModelFPFtvItem.yaml_time(yaml_path)
         db_item.yaml_path = yaml_path
-        if not os.path.exists(os.path.join(yaml_path, 'show.yaml')):
-            if len(items) > 0:
-                return
-            else:
-                if Task.get_yaml_data(db_item) != None:
-                    show_data = Task.get_yaml_data(db_item)
-                    SupportYaml.write_yaml(os.path.join(yaml_path, 'show.yaml'), show_data)
-                    db_item.yaml = "yaml_success"
-                else:
-                    db_item.yaml = "yaml_fail"
-        else:
-            if len(items) > 0:
-                item = items[0]
-                if item.yaml == "yaml_pass" or item.yaml == "yaml_fail" :
+        try:
+            if not os.path.exists(os.path.join(yaml_path, 'show.yaml')):
+                if len(items) > 0:
                     return
                 else:
-                    given_time = item.created_time
-                    current_time = datetime.now()
-                    time_diff = current_time - given_time
-                    time_diff_seconds = time_diff.total_seconds()
-                    logger.debug(time_diff_seconds)
-                    if time_diff_seconds < 64800 :
-                        return
-                    else:
-                        yaml_code = SupportYaml.read_yaml(os.path.join(yaml_path, 'show.yaml'))['code']
-                        show_data = Task.get_yaml_data(db_item, yaml_code)
-                        SupportYaml.write_yaml(os.path.join(yaml_path, 'show.yaml'), show_data)
-                        db_item.yaml = "yaml_success"
-            elif SupportYaml.read_yaml(os.path.join(yaml_path, 'show.yaml'))['primary'] != False:
-                db_item.yaml = "yaml_pass"
-            else:
-                try:
-                    yaml_code = SupportYaml.read_yaml(os.path.join(yaml_path, 'show.yaml'))['code']
-                    show_data = Task.get_yaml_data(db_item, yaml_code)
-                    if show_data != None or show_data != []:
+                    if Task.get_yaml_data(db_item) != None:
+                        show_data = Task.get_yaml_data(db_item)
                         SupportYaml.write_yaml(os.path.join(yaml_path, 'show.yaml'), show_data)
                         db_item.yaml = "yaml_success"
                     else:
                         db_item.yaml = "yaml_fail"
-                except:
-                    db_item.yaml = "yaml_fail"
-                    return
-
+            else:
+                if len(items) > 0:
+                    item = items[0]
+                    if item.yaml == "yaml_pass" or item.yaml == "yaml_fail" :
+                        return
+                    else:
+                        given_time = item.created_time
+                        current_time = datetime.now()
+                        time_diff = current_time - given_time
+                        time_diff_seconds = time_diff.total_seconds()
+                        if time_diff_seconds < 64800 :
+                            return
+                        else:
+                            yaml_code = SupportYaml.read_yaml(os.path.join(yaml_path, 'show.yaml'))['code']
+                            show_data = Task.get_yaml_data(db_item, yaml_code)
+                            SupportYaml.write_yaml(os.path.join(yaml_path, 'show.yaml'), show_data)
+                            db_item.yaml = "yaml_success"
+                elif SupportYaml.read_yaml(os.path.join(yaml_path, 'show.yaml'))['primary'] != False:
+                    db_item.yaml = "yaml_pass"
+                else:
+                    try:
+                        yaml_code = SupportYaml.read_yaml(os.path.join(yaml_path, 'show.yaml'))['code']
+                        show_data = Task.get_yaml_data(db_item, yaml_code)
+                        if show_data != None or show_data != []:
+                            SupportYaml.write_yaml(os.path.join(yaml_path, 'show.yaml'), show_data)
+                            db_item.yaml = "yaml_success"
+                        else:
+                            db_item.yaml = "yaml_fail"
+                    except:
+                        db_item.yaml = "yaml_fail"
+                        return
+        except Exception as e: 
+            P.logger.error(f"Exception:{e}")
+            P.logger.error(traceback.format_exc())
 
     def dedupe_move(source_path, target_dir, target_filename):
         if P.ModelSetting.get_bool('basic_delete_dupe'):
@@ -502,49 +544,53 @@ class Task(object):
 
 
     def process_probe(db_item):
-        db_item.ffprobe = SupportFfprobe.ffprobe(os.path.join(db_item.foldername, db_item.filename_original))
-        if 'format' not in db_item.ffprobe:
-            return False
-        db_item.video_size = int(db_item.ffprobe['format']['size'])
-        vc = 0
-        audio_codec_list = []
-        subtitle_list = []
-        for track in db_item.ffprobe['streams']:
-            if track['codec_type'] == 'video':
-                vc += 1
-                if db_item.video_codec is None:
-                    db_item.video_codec = track['codec_name'].upper()
-                    db_item.resolution = f"{track['coded_width']}x{track['coded_height']}"
-            elif track['codec_type'] == 'audio':
-                db_item.audio_count += 1
-                if 'tags' in track and 'language' in track['tags']:
-                    db_item.audio_list = track['tags']['language']
-                    #P.logger.info(track['tags']['language'])
-                    if track['tags']['language'] in ['kor', 'ko']:
-                        db_item.include_kor_audio = True
-                
-                tmp = track['codec_name'].upper()
-                if db_item.audio_codec is None:
-                    db_item.audio_codec = tmp
-                if tmp not in audio_codec_list:
-                    audio_codec_list.append(tmp)
+        try:
+            db_item.ffprobe = SupportFfprobe.ffprobe(os.path.join(db_item.foldername, db_item.filename_original))
+            if 'format' not in db_item.ffprobe:
+                return False
+            db_item.video_size = int(db_item.ffprobe['format']['size'])
+            vc = 0
+            audio_codec_list = []
+            subtitle_list = []
+            for track in db_item.ffprobe['streams']:
+                if track['codec_type'] == 'video':
+                    vc += 1
+                    if db_item.video_codec is None:
+                        db_item.video_codec = track['codec_name'].upper()
+                        db_item.resolution = f"{track['coded_width']}x{track['coded_height']}"
+                elif track['codec_type'] == 'audio':
+                    db_item.audio_count += 1
+                    if 'tags' in track and 'language' in track['tags']:
+                        db_item.audio_list = track['tags']['language']
+                        #P.logger.info(track['tags']['language'])
+                        if track['tags']['language'] in ['kor', 'ko']:
+                            db_item.include_kor_audio = True
+                    
+                    tmp = track['codec_name'].upper()
+                    if db_item.audio_codec is None:
+                        db_item.audio_codec = tmp
+                    if tmp not in audio_codec_list:
+                        audio_codec_list.append(tmp)
 
-            elif track['codec_type'] == 'subtitle':
-                db_item.subtitle_count += 1
-                if 'tags' in track and 'language' in track['tags']:
-                    #P.logger.info(track['tags']['language'])
-                    if track['tags']['language'] in ['kor', 'ko']:
-                        db_item.include_kor_subtitle = True
-                    if track['tags']['language'] not in subtitle_list:
-                        subtitle_list.append(track['tags']['language'])
-            elif track['codec_type'] in ['data', 'attachment']:
-                P.logger.debug("코덱 타입이 데이타")
-            else:
-                P.logger.debug("코덱 타입이 없음")
-        db_item.audio_codec_list = ', '.join(audio_codec_list)
-        db_item.subtitle_list = ', '.join(subtitle_list)
-        #P.logger.debug(f"VC : {vc}")
-        return True
+                elif track['codec_type'] == 'subtitle':
+                    db_item.subtitle_count += 1
+                    if 'tags' in track and 'language' in track['tags']:
+                        #P.logger.info(track['tags']['language'])
+                        if track['tags']['language'] in ['kor', 'ko']:
+                            db_item.include_kor_subtitle = True
+                        if track['tags']['language'] not in subtitle_list:
+                            subtitle_list.append(track['tags']['language'])
+                elif track['codec_type'] in ['data', 'attachment']:
+                    P.logger.debug("코덱 타입이 데이타")
+                else:
+                    P.logger.debug("코덱 타입이 없음")
+            db_item.audio_codec_list = ', '.join(audio_codec_list)
+            db_item.subtitle_list = ', '.join(subtitle_list)
+            #P.logger.debug(f"VC : {vc}")
+            return True
+        except Exception as e: 
+            P.logger.error(f"Exception:{e}")
+            P.logger.error(traceback.format_exc())
     
 
     def get_video(config, db_item, base):
