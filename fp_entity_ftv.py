@@ -121,17 +121,20 @@ class EntityFtv(object):
                 keyword = keyword.replace(match.group(), '').strip()
                 year = match.group()
         logger.debug('검색어: %s', keyword)
+        tmdb_code = ''
         if year == None:
             tmdb_code = tmdb.search(keyword)
         else:
             tmdb_code = tmdb.search(keyword, year)
         try:
-            if tmdb_code != '':
+            logger.debug('TMDB 코드: %s', tmdb_code)
+            if tmdb_code != None:
                 tmdb_code = 'FT'+str(tmdb_code)
                 if SiteTmdbFtv.info(tmdb_code)['ret'] == 'success':
                     self.data['meta']['info'] = SiteTmdbFtv.info(tmdb_code)['data']
                     self.data['meta']['find'] = True
-
+            else:
+                self.data['meta']['find'] = False
         except Exception as e:
             logger.error(f"Exception:{str(e)}")
             logger.error(traceback.format_exc())
