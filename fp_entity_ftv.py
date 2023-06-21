@@ -128,7 +128,7 @@ class EntityFtv(object):
             tmdb_code = tmdb.search(keyword, year)
         try:
             logger.debug('TMDB 코드: %s', tmdb_code)
-            if tmdb_code != None:
+            if tmdb_code != None and tmdb_code != '':
                 tmdb_code = 'FT'+str(tmdb_code)
                 if SiteTmdbFtv.info(tmdb_code)['ret'] == 'success':
                     self.data['meta']['info'] = SiteTmdbFtv.info(tmdb_code)['data']
