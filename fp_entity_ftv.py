@@ -140,6 +140,5 @@ class EntityFtv(object):
             logger.error(traceback.format_exc())
 
 
-        
 
 
