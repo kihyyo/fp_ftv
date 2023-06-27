@@ -348,7 +348,7 @@ class Task(object):
                 if target_filename is not None:
                     if is_dry == False:
                         if config['hard_subtitle'] != None:
-                             db_item.is_vod = False
+                            db_item.is_vod = False
                             for vod in config['hard_subtitle']:
                                 if vod.lower() in db_item.filename_original.lower():
                                     db_item.is_vod = True 
