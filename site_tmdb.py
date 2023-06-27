@@ -37,6 +37,8 @@ class tmdb(object):
                     score_list.append(max(cls.similar(t['name'], keyword), cls.similar(t['original_name'], keyword))) 
                 if max(score_list) > 0.7 :
                     tmdb_code = tmdb_search['results'][score_list.index(max(score_list))]['id']
+                else:
+                    tmdb_code = tmdb_search['results'][0]['id']
             else:
                 for t in tmdb_search['results']:
                     try:
