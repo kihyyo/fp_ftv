@@ -14,7 +14,7 @@ EXTENSION = 'mp4|avi|mkv|ts|wmv|m2ts|smi|srt|ass|m4v|flv|asf|mpg|ogm'
 REGEXS = [
     r'^(?P<name>.*?)\.([sS](?P<sno>\d+))?[eE](?P<no>\d+)\.(?P<etc>.*?)?\.?(?P<quality>\d{3,4})[p|P]\.(?P<streaming>AMZN|ATVP|NF|DSNP|HMAX|PMTP|HULU|STAN|iP)?\.?(?i)(WEB-DL|WEBRip|WEB|bluray)?\.?(?i)(?P<audio>DDPA|DDP|DD|AC3|AAC|DTS-HD|DTS|TrueHD)?(?P<channel>2.0|5.1|7.1)?\.?(?P<etc2>.*?)(\-(?P<release>.*?))?(?i)(?P<container>\.mkv|\.mp4|\.srt|\.ass)$',
     r'^(?P<name>.*?)([sS](?P<sno>\d+))[eE](?P<no>\d+)(.*?)(?i)(?P<container>\.mkv|\.mp4|\.avi|\.flv|\.wmv|\.ts|\.srt|\.ass)$', 
-    r'^(?P<name>.*?)\.([sS](?P<sno>\d+))?[eE](?P<no>\d+)(\-E\d{1,4})?\.?(?P<a>.*?\.)?(?P<date>\d{6})?\.(?P<etc>.*?)((?P<quality>\d+)[p|P])?(\-?(?P<release>.*?))?(?i)(?P<container>\.mkv|\.mp4|)$'
+    r'^(?P<name>.*?)\.[eE](?P<no>\d+)(\-E\d{1,4})?\.?(?P<a>.*?\.)?(?P<date>\d{6})?\.(?P<etc>.*?)((?P<quality>\d+)[p|P])?(\-?(?P<release>.*?))?(?i)(?P<container>\.mkv|\.mp4|)$'
 ]
 
 #합본처리 제외
