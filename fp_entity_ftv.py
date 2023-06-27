@@ -72,8 +72,8 @@ class EntityFtv(object):
                 match = re.compile(regex).match(self.data['filename']['original'])
                 if match:
                     md = match.groupdict()
-                    if md['name'][-1] == '-':
-                        md['name'] = md['name'][:-1].strip()
+                    # if md['name'][-1] == '-':
+                    #     md['name'] = md['name'][:-1].strip()
                     self.data['filename']['is_matched'] = True
                     self.data['filename']['match_index'] = idx
                     self.data['filename']['name'] = get(md, 'name')
