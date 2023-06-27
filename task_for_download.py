@@ -348,11 +348,12 @@ class Task(object):
                 if target_filename is not None:
                     if is_dry == False:
                         if config['hard_subtitle'] != None:
+                             db_item.is_vod = False
                             for vod in config['hard_subtitle']:
                                 if vod.lower() in db_item.filename_original.lower():
                                     db_item.is_vod = True 
                                 else:
-                                    db_item.is_vod = False
+                                    continue
                         if db_item.include_kor_subtitle != True and db_item.is_vod != True:
                             subtitle_list = Task.check_subtitle_file(db_item)
                             if len(subtitle_list) > 0:
