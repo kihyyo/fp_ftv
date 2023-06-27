@@ -39,6 +39,7 @@ class Task(object):
                     try:
                         logger.debug('파일이름: %s', original_filename)                      
                         db_item = ModelFPFtvItem(call_module, original_filename, base, is_dry)
+                        db_item.original_filename = original_filename
                         filename = original_filename
                         #logger.warning(f"{idx} / {len(files)} : {filename}")
                         filename = Task.process_pre(config, db_item, is_dry)
@@ -52,32 +53,33 @@ class Task(object):
                             db_item.quality = entity.data['filename']['quality']
                             db_item.streaming = entity.data['filename']['streaming']                    
                             db_item.season_no = entity.data['filename']['sno']
+                            db_item.epi_no = entity.data['filename']['no']
                             db_item.season = 'Season '+str(db_item.season_no)
-                            db_item.error = error
-                            if entity.data['filename']['container'] in ['.mkv', '.mp4'] :
-                                if entity.data['meta']['find']:
-                                    db_item.meta = entity.data['meta']['info']
-                                    db_item.title = db_item.meta['title']
-                                    db_item.title_en = db_item.meta['originaltitle']
-                                    db_item.year = db_item.meta['year']
-                                    db_item.genre = ', '.join(db_item.meta['genre'])#str(db_item.meta['genre'])[1:-1].replace("'",'') if len(db_item.meta['genre']) > 0 else '기타'
-                                    db_item.country = db_item.meta['country'][0] if len(db_item.meta['country']) > 0 else '정보없음'
-                                    db_item.target_genre = Task.make_genre(config, db_item)
-                                    Task.process_probe(db_item)
+                            if entity.data['meta']['find']:
+                                db_item.meta = entity.data['meta']['info']
+                                db_item.title = db_item.meta['title']
+                                db_item.title_en = db_item.meta['originaltitle']
+                                db_item.year = db_item.meta['year']
+                                db_item.genre = ', '.join(db_item.meta['genre'])#str(db_item.meta['genre'])[1:-1].replace("'",'') if len(db_item.meta['genre']) > 0 else '기타'
+                                db_item.country = db_item.meta['country'][0] if len(db_item.meta['country']) > 0 else '정보없음'
+                                db_item.target_genre = Task.make_genre(config, db_item)
+                                db_item.error = error
+                                if entity.data['filename']['container'] in ['.mkv', '.mp4'] :
+                                        Task.process_probe(db_item)
+                                        db_item.target_season = Task.make_season(config, db_item)
+                                        Task.move_file(config, entity, db_item, target, is_dry)
+                                elif entity.data['filename']['container'] in ['.srt', '.ass'] and os.path.isfile(os.path.join(db_item.foldername, db_item.filename_original)) :
                                     db_item.target_season = Task.make_season(config, db_item)
-                                    Task.move_file(config, entity, db_item, target, is_dry)
-                                else:
-                                    logger.debug('메타 없음')
-                                    db_item.status = "MOVE_BY_NOMETA"
-                                    db_item.result_folder = os.path.join(config['경로 설정']['no_meta'].format(error=error), entity.data['filename']['name'].replace('\.',' '), 'Season '+str(int(entity.data['filename']['sno'])))
-                                    if is_dry == False:
-                                        Task.dedupe_move(os.path.join(base, original_filename), db_item.result_folder, db_item.result_filename)
-                            elif entity.data['filename']['container'] in ['.srt', '.ass'] and os.path.isfile(os.path.join(db_item.foldername, db_item.filename_original)) and entity.data['meta']['find']:
-                                db_item.target_season = Task.make_season(config, db_item)
-                                if Task.get_video(config, db_item, base) != True:
-                                    Task.dedupe_move(os.path.join(base,db_item.filename_pre),os.path.join(config['경로 설정']['sub'],db_item.filename_pre))
-                                else:
-                                    continue
+                                    if Task.get_video(config, db_item, base) != True:
+                                        Task.dedupe_move(os.path.join(base, db_item.original_filename),config['경로 설정']['sub'], db_item.filename_pre)
+                                    else:
+                                        continue
+                            else:
+                                logger.debug('메타 없음')
+                                db_item.status = "MOVE_BY_NOMETA"
+                                db_item.result_folder = os.path.join(config['경로 설정']['no_meta'].format(error=error), entity.data['filename']['name'].replace('\.',' '), 'Season '+str(int(entity.data['filename']['sno'])))
+                                if is_dry == False:
+                                    Task.dedupe_move(os.path.join(base, original_filename), db_item.result_folder, db_item.result_filename)
                         else:
                             db_item.status = "MOVE_BY_NOTV"
                             db_item.result_folder = config['경로 설정']['no_tv'].format(error=error)
@@ -265,7 +267,7 @@ class Task(object):
             if os.path.splitext(db_item.filename_pre)[1] in ['.mkv', '.mp4']:
                 season_list = config.get('시즌 설정')
                 global split_season
-                split_season = len(season_list) + 1
+                split_season = len(season_list)
                 if season_list != None:
                     for condition_name in season_list:
                         try:
@@ -341,7 +343,6 @@ class Task(object):
                 tmps = re.sub("\s{2,}", ' ', tmps) 
                 tmps = re.sub("/{2,}", '/', tmps) 
                 tmps = tmps.split('/')
-                gds_folder = config['경로 설정']['gds'].format(**default_folder_folder)
                 program_folder = os.path.join(target_folder, *tmps)
                 target_filename = entity.data['filename']['original']
                 if target_filename is not None:
@@ -369,7 +370,6 @@ class Task(object):
                             Task.dedupe_move(source_path, program_folder, target_filename)
                             if P.ModelSetting.get_bool('basic_make_show_yaml'):
                                 Task.get_yaml(db_item)
-
                         else:
                             sub_x_folder = config['경로 설정']['sub_x'].format(**default_folder_folder)
                             db_item.result_folder = sub_x_folder
@@ -457,7 +457,7 @@ class Task(object):
                     code = yaml_utils.YAMLUTILS.code_sort(user_order, streaming_site_list)
             if code != None:
                 show_data = yaml_utils.YAMLUTILS.get_data(code)
-                if len(show_data) > 0:
+                if show_data != None:
                     season_data = []
                     for k in range(len(show_data['seasons'])):
                         i = int(show_data['seasons'][k]['index'])
@@ -614,27 +614,32 @@ class Task(object):
 
     def get_video(config, db_item, base):
         try:
-            match = re.search(r'(?i)(.ko.srt|.kor.srt|.kor.ass|.ko.ass|.ass)$', db_item.filename_pre)
-            tmp = db_item.filename_pre.replace(match.group(),'').strip()
-            for ext in ['.mkv', '.mp4']:
-                _ = os.path.join(tmp + ext)
-                if not os.path.isfile(os.path.join(db_item.foldername, _)):
-                    logger.debug("자막에 맞는 동영상 파일 불러오는 중")
-                    target_folder = config['경로 설정']['sub_x'].format(**Task.get_folder_folder(db_item))
-                    logger.debug('탐색 경로: %s', target_folder)
-                    if os.path.isdir(target_folder):
-                        file_list = os.listdir(target_folder)
-                        if os.path.join(tmp + ext) in file_list:
-                            shutil.move(os.path.join(target_folder, _), os.path.join(base, _))
-                            logger.debug("불러오기 성공. 다음 탐색시 이동")
-                            return True
+            match = re.search(r'(?i)(.ko.srt|.kor.srt|.kor.ass|.ko.ass|.ass|.srt의 사본|.srt 사본)$', db_item.original_filename)
+            if match:
+                tmp = db_item.original_filename.replace(match.group(),'').strip()
+                for ext in ['.mkv', '.mp4']:
+                    _ = os.path.join(tmp + ext)
+                    if not os.path.isfile(os.path.join(db_item.foldername, _)):
+                        logger.debug("자막에 맞는 동영상 파일 불러오는 중")
+                        target_folder = config['경로 설정']['sub_x'].format(**Task.get_folder_folder(db_item))
+                        logger.debug('탐색 경로: %s', target_folder)
+                        if os.path.isdir(target_folder):
+                            file_list = os.listdir(target_folder)
+                            if os.path.join(tmp + ext) in file_list:
+                                shutil.move(os.path.join(target_folder, _), os.path.join(base, _))
+                                if match.group() == '.srt의 사본' or match.group() == '.srt 사본':
+                                    os.rename(os.path.join(base, db_item.original_filename), os.path.join(base, tmp+'.ko.srt'))
+                                logger.debug("불러오기 성공. 다음 탐색시 이동")
+                                return True
+                            else:
+                                continue    
                         else:
-                            continue    
+                            logger.debug("자막에 맞는 sub_x 폴더 없음")
+                            return False   
                     else:
-                        logger.debug("자막에 맞는 sub_x 폴더 없음")
-                        return False   
-                else:
-                    return True
+                        return True
+            else:
+                return False
 
         except Exception as e:
             logger.error(f"Exception:{str(e)}")
