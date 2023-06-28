@@ -375,7 +375,7 @@ class Task(object):
                             sub_x_folder = config['경로 설정']['sub_x'].format(**default_folder_folder)
                             db_item.result_folder = sub_x_folder
                             db_item.result_filename = target_filename
-                            db_item.status = "MOVE_SUB_X"
+                            db_item.status = "MOVE_BY_SUB_X"
                             Task.dedupe_move(source_path, sub_x_folder, target_filename)
                             
                 else:
