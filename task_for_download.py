@@ -443,7 +443,7 @@ class Task(object):
                 yaml_data = get_code.OTTCODE(db_item.title, db_item.year)
                 streaming_site_list = yaml_data.get_ott_code()
                 streaming_site = db_item.streaming
-                user_order = ['WAVVE', 'TVING', 'COUPANG', 'NF', 'DSNP', 'AMZN', 'ATVP']
+                user_order = Task.get_user_order(db_item)
                 # user_order = None
                 # if db_item.include_kor_file_subtitle == True :
                 #     user_order = ['TVING', 'WAVVE', 'DSNP','COUPANG']
@@ -484,7 +484,20 @@ class Task(object):
             P.logger.error(f"Exception:{e}")
             P.logger.error(traceback.format_exc())
 
-        
+    def get_user_order(db_item):
+        if '-SW' in db_item.filename_original:
+            return ['WAVVE']
+        elif '-ST' in db_item.filename_original:
+            return ['TVING']
+        elif '.NF.' in db_item.filename_original:
+            return ['NF']
+        elif '.DSNP.' in db_item.filename_original:
+            return ['DSNP']
+        elif '.ATVP.' in in db_item.filename_original:
+            return ['ATVP']
+        else:
+            return ['WAVVE', 'TVING', 'COUPANG', 'NF', 'DSNP', 'AMZN', 'ATVP']
+            
     def get_yaml(db_item):
         yaml_path = os.path.join(db_item.target_folder, P.ModelSetting.get('basic_yaml_path').format(**Task.get_folder_folder(db_item)))
         items = ModelFPFtvItem.yaml_time(yaml_path)
