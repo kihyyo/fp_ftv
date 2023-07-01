@@ -321,9 +321,6 @@ class Task(object):
                 tmps = re.sub("\s{2,}", ' ', tmps) 
                 tmps = re.sub("/{2,}", '/', tmps) 
                 tmps = tmps.split('/')
-                gds_folder = config['경로 설정']['gds'].format(**default_folder_folder)
-                db_item.gds_yaml = os.path.dirname(gds_folder)
-                db_item.gds_folder = gds_folder
                 program_folder = os.path.join(target_folder, *tmps)
                 target_filename = entity.data['filename']['original']
                 if target_filename is not None:
