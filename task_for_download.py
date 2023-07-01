@@ -493,7 +493,7 @@ class Task(object):
             return ['NF']
         elif '.DSNP.' in db_item.filename_original:
             return ['DSNP']
-        elif '.ATVP.' in in db_item.filename_original:
+        elif '.ATVP.' in db_item.filename_original:
             return ['ATVP']
         else:
             return ['WAVVE', 'TVING', 'COUPANG', 'NF', 'DSNP', 'AMZN', 'ATVP']
