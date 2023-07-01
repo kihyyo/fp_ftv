@@ -443,18 +443,18 @@ class Task(object):
                 yaml_data = get_code.OTTCODE(db_item.title, db_item.year)
                 streaming_site_list = yaml_data.get_ott_code()
                 streaming_site = db_item.streaming
-                logger.debug(streaming_site)
-                user_order = None
-                if db_item.include_kor_file_subtitle == True :
-                    user_order = ['TVING', 'WAVVE', 'DSNP','COUPANG']
-                elif streaming_site != '':
-                    for site in ['NF', 'DSNP', 'ATVP', 'AMZN']:
-                        if site == streaming_site:
-                            user_order = [site]
-                            logger.debug(user_order)
-                else:
-                    user_order = ['NF', 'DSNP', 'ATVP', 'AMZN']
-                if user_order != None and streaming_site_list != []:
+                user_order = ['WAVVE', 'TVING', 'COUPANG', 'NF', 'DSNP', 'AMZN', 'ATVP']
+                # user_order = None
+                # if db_item.include_kor_file_subtitle == True :
+                #     user_order = ['TVING', 'WAVVE', 'DSNP','COUPANG']
+                # elif streaming_site != '':
+                #     for site in ['NF', 'DSNP', 'ATVP', 'AMZN']:
+                #         if site == streaming_site:
+                #             user_order = [site]
+                #             logger.debug(user_order)
+                # else:
+                #     user_order = ['NF', 'DSNP', 'ATVP', 'AMZN']
+                if streaming_site_list != []:
                     code = yaml_utils.YAMLUTILS.code_sort(user_order, streaming_site_list)
             if code != None:
                 show_data = yaml_utils.YAMLUTILS.get_data(code)
