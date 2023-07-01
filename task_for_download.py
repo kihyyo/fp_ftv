@@ -71,7 +71,7 @@ class Task(object):
                                 elif entity.data['filename']['container'] in ['.srt', '.ass'] and os.path.isfile(os.path.join(db_item.foldername, db_item.filename_original)) :
                                     db_item.target_season = Task.make_season(config, db_item)
                                     if Task.get_video(config, db_item, base) != True:
-                                        Task.dedupe_move(os.path.join(base, db_item.original_filename),config['경로 설정']['sub'], db_item.filename_pre)
+                                        Task.dedupe_move(os.path.join(base, db_item.original_filename), config['경로 설정']['sub'].format(error=error), db_item.filename_pre)
                                     else:
                                         continue
                             else:
@@ -85,28 +85,6 @@ class Task(object):
                             db_item.result_folder = config['경로 설정']['no_tv'].format(error=error)
                             if is_dry == False:
                                 Task.dedupe_move(os.path.join(base, original_filename), db_item.result_folder, db_item.result_filename)
-                        if config.get('PLEX_MATE_SCAN') != None:
-                            for plex_info in config.get('PLEX_MATE_SCAN'):
-                                url = f"{plex_info['URL']}/plex_mate/api/scan/do_scan"
-                                P.logger.info(f"PLEX_MATE : {url}")
-                                plex_target = os.path.join(db_item.result_folder, db_item.result_filename)
-                                for rule in plex_info.get('경로변경', []):
-                                    plex_target = plex_target.replace(rule['소스'], rule['타겟'])
-                                
-                                if plex_target[0] == '/':
-                                    plex_target = plex_target.replace('\\', '/')
-                                else:
-                                    plex_target = plex_target.replace('/', '\\')
-                                data = {
-                                    'callback_id': f"{P.package_name}_basic_{db_item.id}",
-                                    'target': plex_target,
-                                    'apikey': F.SystemModelSetting.get('apikey'),
-                                    'mode': 'ADD',
-                                }
-                                res = requests.post(url, data=data)
-                                #P.logger.info(res)
-                                data = res.json()
-                                P.logger.info(f"PLEX SCAN 요청 : {url} {data}")
                         
                         
                         if P.ModelSetting.get_bool("basic_use_notify"):
@@ -343,17 +321,19 @@ class Task(object):
                 tmps = re.sub("\s{2,}", ' ', tmps) 
                 tmps = re.sub("/{2,}", '/', tmps) 
                 tmps = tmps.split('/')
+                gds_folder = config['경로 설정']['gds'].format(**default_folder_folder)
+                db_item.gds_yaml = os.path.dirname(gds_folder)
+                db_item.gds_folder = gds_folder
                 program_folder = os.path.join(target_folder, *tmps)
                 target_filename = entity.data['filename']['original']
                 if target_filename is not None:
                     if is_dry == False:
                         if config['hard_subtitle'] != None:
-                            db_item.is_vod = False
                             for vod in config['hard_subtitle']:
                                 if vod.lower() in db_item.filename_original.lower():
                                     db_item.is_vod = True 
                                 else:
-                                    continue
+                                    db_item.is_vod = False
                         if db_item.include_kor_subtitle != True and db_item.is_vod != True:
                             subtitle_list = Task.check_subtitle_file(db_item)
                             if len(subtitle_list) > 0:
@@ -371,6 +351,28 @@ class Task(object):
                             Task.dedupe_move(source_path, program_folder, target_filename)
                             if P.ModelSetting.get_bool('basic_make_show_yaml'):
                                 Task.get_yaml(db_item)
+                            if config.get('PLEX_MATE_SCAN') != None:
+                                for plex_info in config.get('PLEX_MATE_SCAN'):
+                                    url = f"{plex_info['URL']}/plex_mate/api/scan/do_scan"
+                                    P.logger.info(f"PLEX_MATE : {url}")
+                                    plex_target = os.path.join(db_item.result_folder, db_item.result_filename)
+                                    for rule in plex_info.get('경로변경', []):
+                                        plex_target = plex_target.replace(rule['소스'], rule['타겟'])
+                                    
+                                    if plex_target[0] == '/':
+                                        plex_target = plex_target.replace('\\', '/')
+                                    else:
+                                        plex_target = plex_target.replace('/', '\\')
+                                    data = {
+                                        'callback_id': f"{P.package_name}_basic_{db_item.id}",
+                                        'target': plex_target,
+                                        'apikey': F.SystemModelSetting.get('apikey'),
+                                        'mode': 'ADD',
+                                    }
+                                    res = requests.post(url, data=data)
+                                    #P.logger.info(res)
+                                    data = res.json()
+                                    P.logger.info(f"PLEX SCAN 요청 : {url} {data}")
                         else:
                             sub_x_folder = config['경로 설정']['sub_x'].format(**default_folder_folder)
                             db_item.result_folder = sub_x_folder
@@ -615,9 +617,11 @@ class Task(object):
 
     def get_video(config, db_item, base):
         try:
-            match = re.search(r'(?i)(.ko.srt|.kor.srt|.kor.ass|.ko.ass|.ass|.srt의 사본|.srt 사본)$', db_item.original_filename)
+            #match = re.search(r'(?i)(.ko.srt|.kor.srt|.kor.ass|.ko.ass|.ass|.srt의 사본|.srt 사본)$', db_item.filename_pre)
+            match = re.search(r'(?i)(.ko.srt|.kor.srt|.kor.ass|.ko.ass|.ass|.srt)$', db_item.filename_pre)
+            srt_ext = match.group()
             if match:
-                tmp = db_item.original_filename.replace(match.group(),'').strip()
+                tmp = db_item.filename_pre.replace(srt_ext,'').strip()
                 for ext in ['.mkv', '.mp4']:
                     _ = os.path.join(tmp + ext)
                     if not os.path.isfile(os.path.join(db_item.foldername, _)):
@@ -626,10 +630,9 @@ class Task(object):
                         logger.debug('탐색 경로: %s', target_folder)
                         if os.path.isdir(target_folder):
                             file_list = os.listdir(target_folder)
-                            if os.path.join(tmp + ext) in file_list:
+                            if tmp + ext in file_list:
                                 shutil.move(os.path.join(target_folder, _), os.path.join(base, _))
-                                if match.group() == '.srt의 사본' or match.group() == '.srt 사본':
-                                    os.rename(os.path.join(base, db_item.original_filename), os.path.join(base, tmp+'.ko.srt'))
+                                os.rename(os.path.join(base, db_item.original_filename), os.path.join(base, tmp+srt_ext))
                                 logger.debug("불러오기 성공. 다음 탐색시 이동")
                                 return True
                             else:
