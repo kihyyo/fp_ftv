@@ -118,7 +118,7 @@ class EntityFtv(object):
             year = None
             match = re.search('\d{4}', keyword)
             if match and 1950 < int(match.group()) < datetime.date.today().year + 1:
-                keyword = keyword.replace(match.group(), '').strip()
+                keyword = keyword.replace(match.group(), '').replace('\(\)','').strip()
                 year = match.group()
         logger.debug('검색어: %s', keyword)
         tmdb_code = ''
