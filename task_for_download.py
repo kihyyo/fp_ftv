@@ -263,7 +263,7 @@ class Task(object):
                             break
                 if season == None:
                     if len(db_item.meta['seasons']) == 1 and db_item.meta['status'] != "Returning Series":
-                        season = None
+                        season = ''
                     else:
                         season = 'Season '+str(season_no)
                 return season
