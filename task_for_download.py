@@ -263,7 +263,7 @@ class Task(object):
                             break
                 if season == None:
                     if len(db_item.meta['seasons']) == 1 and db_item.meta['status'] != "Returning Series":
-                        season = ''
+                        season = None
                     else:
                         season = 'Season '+str(season_no)
                 return season
@@ -396,7 +396,7 @@ class Task(object):
         data['TITLE_ALL_FIRST_CHAR'] = Task.title_all_first_char(db_item.title)
         data['YEAR'] = db_item.year
         data['GENRE'] = db_item.target_genre
-        data['season'] = db_item.season
+        data['season'] = db_item.season if db_item.season != None else ""
         data['SEASON'] = db_item.target_season
         data['COUNTRY'] = db_item.country
         data['QUALITY'] = db_item.quality
