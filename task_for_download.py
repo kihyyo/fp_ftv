@@ -262,7 +262,10 @@ class Task(object):
                         if season != None:
                             break
                 if season == None:
-                    season = 'Season '+str(season_no)
+                    if db_item.meta['number_of_seasons'] == 1 and db_item.meta['in_production'] != True:
+                        season = None
+                    else:
+                        season = 'Season '+str(season_no)
                 return season
             else:
                 season = 'Season '+str(season_no)
