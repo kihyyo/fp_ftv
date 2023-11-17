@@ -461,23 +461,23 @@ class Task(object):
                     code = yaml_utils.YAMLUTILS.code_sort(user_order, streaming_site_list)
             if code != None:
                 show_data = yaml_utils.YAMLUTILS.get_data(code)
-                if show_data != None:
-                    season_data = []
-                    for k in range(len(show_data['seasons'])):
-                        i = int(show_data['seasons'][k]['index'])
-                        for j in range(split_season):
-                            episode_data = copy.deepcopy(show_data['seasons'][k]['episodes'])
-                            season_no = int(int(j)*100 + i )                                  
-                            season = {
-                                'index' : season_no,
-                                'episodes' : episode_data
-                            }
-                            season_data.append(season)
-                    try:
-                        del show_data['title']
-                    except:
-                        pass
-                    show_data['seasons'] = season_data
+                # if show_data != None:
+                #     season_data = []
+                #     for k in range(len(show_data['seasons'])):
+                #         i = int(show_data['seasons'][k]['index'])
+                #         for j in range(split_season):
+                #             episode_data = copy.deepcopy(show_data['seasons'][k]['episodes'])
+                #             season_no = int(int(j)*100 + i )                                  
+                #             season = {
+                #                 'index' : season_no,
+                #                 'episodes' : episode_data
+                #             }
+                #             season_data.append(season)
+                #     try:
+                #         del show_data['title']
+                #     except:
+                #         pass
+                #     show_data['seasons'] = season_data
 
                     return show_data
                 else:
