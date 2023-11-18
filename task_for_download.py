@@ -447,38 +447,10 @@ class Task(object):
                 streaming_site_list = yaml_data.get_ott_code()
                 streaming_site = db_item.streaming
                 user_order = Task.get_order(db_item)
-                # user_order = None
-                # if db_item.include_kor_file_subtitle == True :
-                #     user_order = ['TVING', 'WAVVE', 'DSNP','COUPANG']
-                # elif streaming_site != '':
-                #     for site in ['NF', 'DSNP', 'ATVP', 'AMZN']:
-                #         if site == streaming_site:
-                #             user_order = [site]
-                #             logger.debug(user_order)
-                # else:
-                #     user_order = ['NF', 'DSNP', 'ATVP', 'AMZN']
                 if streaming_site_list != []:
                     code = yaml_utils.YAMLUTILS.code_sort(user_order, streaming_site_list)
             if code != None:
                 show_data = yaml_utils.YAMLUTILS.get_data(code)
-                # if show_data != None:
-                #     season_data = []
-                #     for k in range(len(show_data['seasons'])):
-                #         i = int(show_data['seasons'][k]['index'])
-                #         for j in range(split_season):
-                #             episode_data = copy.deepcopy(show_data['seasons'][k]['episodes'])
-                #             season_no = int(int(j)*100 + i )                                  
-                #             season = {
-                #                 'index' : season_no,
-                #                 'episodes' : episode_data
-                #             }
-                #             season_data.append(season)
-                #     try:
-                #         del show_data['title']
-                #     except:
-                #         pass
-                #     show_data['seasons'] = season_data
-
                     return show_data
                 else:
                     return
