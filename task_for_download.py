@@ -451,10 +451,13 @@ class Task(object):
                     code = yaml_utils.YAMLUTILS.code_sort(user_order, streaming_site_list)
             if code != None:
                 show_data = yaml_utils.YAMLUTILS.get_data(code)
-                    return show_data
-                else:
-                    return
-
+                try:
+                    del show_data['title']
+                except:
+                    pass
+                return show_data
+            else:
+                return
         except Exception as e: 
             P.logger.error(f"Exception:{e}")
             P.logger.error(traceback.format_exc())
