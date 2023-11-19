@@ -494,24 +494,24 @@ class Task(object):
             else:
                 if len(items) > 0:
                     item = items[0]
-                    if item.yaml == "yaml_pass" or item.yaml == "yaml_fail" :
+                    # if item.yaml == "yaml_pass" or item.yaml == "yaml_fail" :
+                    #     return
+                    # else:
+                    given_time = item.created_time
+                    current_time = datetime.now()
+                    time_diff = current_time - given_time
+                    time_diff_seconds = time_diff.total_seconds()
+                    if time_diff_seconds < 64800 :
                         return
                     else:
-                        given_time = item.created_time
-                        current_time = datetime.now()
-                        time_diff = current_time - given_time
-                        time_diff_seconds = time_diff.total_seconds()
-                        if time_diff_seconds < 64800 :
-                            return
-                        else:
-                            try:
-                                yaml_code = SupportYaml.read_yaml(os.path.join(yaml_path, 'show.yaml'))['code']
-                                show_data = Task.get_yaml_data(db_item, yaml_code)
-                                SupportYaml.write_yaml(os.path.join(yaml_path, 'show.yaml'), show_data)
-                                db_item.yaml = "yaml_success"
-                            except Exception as e:
-                                logger.debug(f"Exception:{str(e)}")
-                                logger.debug(traceback.format_exc())
+                        try:
+                            yaml_code = SupportYaml.read_yaml(os.path.join(yaml_path, 'show.yaml'))['code']
+                            show_data = Task.get_yaml_data(db_item, yaml_code)
+                            SupportYaml.write_yaml(os.path.join(yaml_path, 'show.yaml'), show_data)
+                            db_item.yaml = "yaml_success"
+                        except Exception as e:
+                            logger.debug(f"Exception:{str(e)}")
+                            logger.debug(traceback.format_exc())
                 elif SupportYaml.read_yaml(os.path.join(yaml_path, 'show.yaml'))['primary'] != False:
                     db_item.yaml = "yaml_pass"
                 else:
