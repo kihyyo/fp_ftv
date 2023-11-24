@@ -30,6 +30,9 @@ class Task(object):
                 PP = F.PluginManager.get_plugin_instance('subtitle_tool')
                 ret = PP.SupportSmi2srt.start(source, remake=False, no_remove_smi=False, no_append_ko=False, no_change_ko_srt=False, fail_move_path=None)
             logger.debug('파일처리 시작')
+            if config.get('PLEX_MATE_SCAN') != None:
+                global plex_scan_list
+                plex_scan_list = []
             for base, dirs, files in os.walk(source):
                 for idx, original_filename in enumerate(files):
                     #if idx>0:return
@@ -102,7 +105,10 @@ class Task(object):
                         else:
                             P.logic.get_module(call_module.replace('_dry', '')).receive_from_task(db_item.as_dict(), celery=False)
                         #return 'wait'
-                      
+
+            if config.get('PLEX_MATE_SCAN') != None and plex_scan_list != [] :
+                Task.plex_scan(plex_scan_list, config, db_item)
+                
             if is_dry == False and base != source :
                 Task.empty_folder_remove(source)
             
@@ -110,6 +116,29 @@ class Task(object):
         P.logger.debug(f"task {call_module} 종료")
         return 'wait'
 
+    def plex_scan(plex_scan_list, config, db_item):
+        plex_scan_list = list(set(plex_scan_list))
+        for plex_info in config.get('PLEX_MATE_SCAN'):
+            for plex_target in plex_scan_list:
+                url = f"{plex_info['URL']}/plex_mate/api/scan/do_scan"
+                P.logger.info(f"PLEX_MATE : {url}")
+                for rule in plex_info.get('경로변경', []):
+                    plex_target = plex_target.replace(rule['소스'], rule['타겟'])
+                
+                if plex_target[0] == '/':
+                    plex_target = plex_target.replace('\\', '/')
+                else:
+                    plex_target = plex_target.replace('/', '\\')
+                data = {
+                    'callback_id': f"{P.package_name}_basic_{db_item.id}",
+                    'target': plex_target,
+                    'apikey': F.SystemModelSetting.get('apikey'),
+                    'mode': 'ADD',
+                }
+                res = requests.post(url, data=data)
+                data = res.json()
+                P.logger.info(f"PLEX SCAN 요청 : {url} {data}")
+                
     def empty_folder_remove(base_path):
         try:
             for root, dirs, files in os.walk(base_path, topdown=False):
@@ -353,27 +382,7 @@ class Task(object):
                             if P.ModelSetting.get_bool('basic_make_show_yaml'):
                                 Task.get_yaml(db_item)
                             if config.get('PLEX_MATE_SCAN') != None:
-                                for plex_info in config.get('PLEX_MATE_SCAN'):
-                                    url = f"{plex_info['URL']}/plex_mate/api/scan/do_scan"
-                                    P.logger.info(f"PLEX_MATE : {url}")
-                                    plex_target = os.path.join(db_item.result_folder, db_item.result_filename)
-                                    for rule in plex_info.get('경로변경', []):
-                                        plex_target = plex_target.replace(rule['소스'], rule['타겟'])
-                                    
-                                    if plex_target[0] == '/':
-                                        plex_target = plex_target.replace('\\', '/')
-                                    else:
-                                        plex_target = plex_target.replace('/', '\\')
-                                    data = {
-                                        'callback_id': f"{P.package_name}_basic_{db_item.id}",
-                                        'target': plex_target,
-                                        'apikey': F.SystemModelSetting.get('apikey'),
-                                        'mode': 'ADD',
-                                    }
-                                    res = requests.post(url, data=data)
-                                    #P.logger.info(res)
-                                    data = res.json()
-                                    P.logger.info(f"PLEX SCAN 요청 : {url} {data}")
+                                plex_scan_list.append(db_item.result_folder)
                         else:
                             sub_x_folder = config['경로 설정']['sub_x'].format(**default_folder_folder)
                             db_item.result_folder = sub_x_folder
