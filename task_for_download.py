@@ -117,9 +117,15 @@ class Task(object):
         return 'wait'
 
     def plex_scan(plex_scan_list, config, db_item):
-        plex_scan_list = list(set(plex_scan_list))
+        temp_dict = {}
+        for item in plex_scan_list:
+            temp_dict[item['key']] = item['value']
+        final_scan_list = []
+        for key, value in temp_dict.items():
+            final_path = os.path.join(key, value)
+            final_scan_list.append(final_path)
         for plex_info in config.get('PLEX_MATE_SCAN'):
-            for plex_target in plex_scan_list:
+            for plex_target in final_scan_list:
                 url = f"{plex_info['URL']}/plex_mate/api/scan/do_scan"
                 P.logger.info(f"PLEX_MATE : {url}")
                 for rule in plex_info.get('경로변경', []):
