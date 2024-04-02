@@ -107,14 +107,26 @@ class Task(object):
                         #return 'wait'
 
             if config.get('PLEX_MATE_SCAN') != None and plex_scan_list != [] :
-                Task.plex_scan(plex_scan_list, config, db_item)
-                
+                final_scan_list = Task.final_list(plex_scan_list)
+                Task.plex_scan(final_scan_list, config, db_item)
+
             if is_dry == False and base != source :
                 Task.empty_folder_remove(source)
             
 
         P.logger.debug(f"task {call_module} 종료")
         return 'wait'
+
+    def final_list(plex_scan_list):
+        temp_dict = {}
+        for item in plex_scan_list:
+            for key, value in item.items():
+                temp_dict[key] = value
+        final_scan_list = []
+        for key, value in temp_dict.items():
+            final_path = os.path.join(key, value)
+            final_scan_list.append(final_path)
+        return final_scan_list
 
     def plex_scan(plex_scan_list, config, db_item):
         temp_dict = {}
