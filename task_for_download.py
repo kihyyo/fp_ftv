@@ -633,14 +633,14 @@ class Task(object):
 
     def get_video(config, db_item, base):
         try:
-            #match = re.search(r'(?i)(.ko.srt|.kor.srt|.kor.ass|.ko.ass|.ass|.srt의 사본|.srt 사본)$', db_item.filename_pre)
             match = re.search(r'(?i)(.ko.srt|.kor.srt|.kor.ass|.ko.ass|.ass|.srt)$', db_item.filename_pre)
             srt_ext = match.group()
             if match:
+                tmp1 = db_item.filename_original.replace(srt_ext,'').strip()
                 tmp = db_item.filename_pre.replace(srt_ext,'').strip()
                 for ext in ['.mkv', '.mp4']:
                     _ = os.path.join(tmp + ext)
-                    if not os.path.isfile(os.path.join(db_item.foldername, _)):
+                    if not os.path.isfile(os.path.join(db_item.foldername, tmp1+ext)) and not os.path.isfile(os.path.join(db_item.foldername, _)):
                         logger.debug("자막에 맞는 동영상 파일 불러오는 중")
                         target_folder = config['경로 설정']['sub_x'].format(**Task.get_folder_folder(db_item))
                         logger.debug('탐색 경로: %s', target_folder)
