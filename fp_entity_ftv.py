@@ -128,11 +128,8 @@ class EntityFtv(object):
             logger.debug('TMDB 코드: %s', tmdb_code)
             if tmdb_code != None and tmdb_code != '':
                 tmdb_code = 'FT'+str(tmdb_code)
-                if tmdb_code in info_cache:
-                    SiteTmdbFtv.info(tmdb_code) = info_cache[tmdb_code]
-                elif SiteTmdbFtv.info(tmdb_code)['ret'] == 'success':
+                if SiteTmdbFtv.info(tmdb_code)['ret'] == 'success':
                     self.data['meta']['info'] = SiteTmdbFtv.info(tmdb_code)['data']
-                    info_cache[tmdb_code] = SiteTmdbFtv.info(tmdb_code)
                     self.data['meta']['find'] = True
             else:
                 self.data['meta']['find'] = False
