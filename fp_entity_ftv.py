@@ -19,7 +19,6 @@ REGEXS = [
 
 class EntityFtv(object):
 
-   info_cache = {}
     def __init__(self, filename, dirname=None, meta=False, is_title=False, config=None):
         self.data = {
             'filename' : {
