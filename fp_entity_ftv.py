@@ -109,7 +109,7 @@ class EntityFtv(object):
                 logger.error(traceback.format_exc())
         self.data['filename']['name'] = name
 
-    def find_meta(self, keyword=False):
+    def find_meta(self, keyword=False, info_cache = {}):
         try:
             if keyword == False:
                 keyword = self.data['filename']['name']
@@ -120,19 +120,28 @@ class EntityFtv(object):
                     year = match.group()
             logger.debug('검색어: %s', keyword)
             tmdb_code = ''
-            if year == None:
-                tmdb_code = tmdb.search(keyword)
-            else:
-                tmdb_code = tmdb.search(keyword, year)
-            try:
-                logger.debug('TMDB 코드: %s', tmdb_code)
-                if tmdb_code != None and tmdb_code != '':
-                    tmdb_code = 'FT'+str(tmdb_code)
-                    if SiteTmdbFtv.info(tmdb_code)['ret'] == 'success':
-                        self.data['meta']['info'] = SiteTmdbFtv.info(tmdb_code)['data']
-                        self.data['meta']['find'] = True
+            if keyword in info_cache:
+                if info_cache[keyword]['ret'] == 'success':
+                    self.data['meta']['info'] = info_cache[keyword]['data']
+                    self.data['meta']['find'] = True
                 else:
                     self.data['meta']['find'] = False
+            else:
+                if year == None:
+                    tmdb_code = tmdb.search(keyword)
+                else:
+                    tmdb_code = tmdb.search(keyword, year)
+                try:
+                    logger.debug('TMDB 코드: %s', tmdb_code)
+                    if tmdb_code != None and tmdb_code != '':
+                        tmdb_code = 'FT'+str(tmdb_code)
+                        tmdb_info = SiteTmdbFtv.info(tmdb_code)
+                        info_cache[keyword] = tmdb_info
+                        if tmdb_info['ret'] == 'success':
+                            self.data['meta']['info'] = tmdb_info['data']
+                            self.data['meta']['find'] = True
+                    else:
+                        self.data['meta']['find'] = False
         except Exception as e:
             logger.error(f"Exception:{str(e)}")
             logger.error(traceback.format_exc())
