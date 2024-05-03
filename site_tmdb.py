@@ -63,7 +63,11 @@ class tmdb(object):
             return tmdb_code
 
         elif tmdb_search['results'] == [] and SiteUtil.is_include_hangul(keyword):
-
+            try:
+                if cls.search_watch(keyword=keyword, year=year)['ret'] == 'success':
+                    cls.search(keyword=keyword, year=year)
+            except:
+                pass
     
     @classmethod
     def search_watcha(cls, keyword, year=None):
