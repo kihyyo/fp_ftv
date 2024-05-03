@@ -14,8 +14,6 @@ from support_site import (SiteWatchaTv, SiteTmdbFtv, SiteUtil)
 
 class tmdb(object):
 
-    cache = {}
-
     @classmethod
     def remove_special_char(cls, text):
         return re.sub('[-=+,#/\?:^$.@*\"※~&%ㆍ!』\\‘|\(\)\[\]\<\>`\'…》：]', '', text)
@@ -25,12 +23,12 @@ class tmdb(object):
         return difflib.SequenceMatcher(a=cls.remove_special_char(seq1.lower()), b=cls.remove_special_char(seq2.lower())).ratio()
 
     @classmethod
-    def search(cls, keyword, year=None):
+    def search(cls, keyword, year=None, meta_cache={}):
 
         tmdb.API_KEY = 'f090bb54758cabf231fb605d3e3e0468'
 
-        if keyword in cls.cache:
-            return cls.cache[keyword]
+        if keyword in meta_cache:
+            return meta_cache[keyword]
 
         if SiteUtil.is_include_hangul(keyword):
             tmdb_search = tmdbsimple.Search().tv(query=keyword, language='ko', include_adult=True)
@@ -60,6 +58,7 @@ class tmdb(object):
                         continue
                 if tmdb_code == '':
                     tmdb_code = tmdb_search['results'][0]['id']
+                    meta_cache[keyword] = tmdb_code
             return tmdb_code
 
         elif tmdb_search['results'] == [] and SiteUtil.is_include_hangul(keyword):
@@ -71,17 +70,14 @@ class tmdb(object):
     
     @classmethod
     def search_watcha(cls, keyword, year=None):
-        ret = {}
-        ret['ret'] == 'empty'
+        ret = {'ret': 'empty', 'data': None}
         watcha_ret = SiteWatchaTv.search(keyword, year=year)
-        if cls.similar(keyword, watcha_ret['data'][0]['title_en']) > 0.85:
-            ret['ret'] == 'success'
+        if watcha_ret and cls.similar(keyword, watcha_ret['data'][0]['title_en']) > 0.85:
+            ret['ret'] = 'success'
             en_keyword = watcha_ret['data'][0]['title_en']
-        else:
-            en_keyword = None
-        if en_keyword is not None:
-            tmdb_ret = SiteTmdbFtv.search(en_keyword, year=year)
-            if tmdb_ret['ret'] == 'success':
-                ret += tmdb_ret['data']
+            if en_keyword:
+                tmdb_ret = SiteTmdbFtv.search(en_keyword, year=year)
+                if tmdb_ret['ret'] == 'success':
+                    ret['data'] = tmdb_ret['data']
         return ret
 
