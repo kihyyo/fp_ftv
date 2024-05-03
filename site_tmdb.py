@@ -14,6 +14,8 @@ from support_site import (SiteWatchaTv, SiteTmdbFtv, SiteUtil)
 
 class tmdb(object):
 
+    cache = {}
+
     @classmethod
     def remove_special_char(cls, text):
         return re.sub('[-=+,#/\?:^$.@*\"※~&%ㆍ!』\\‘|\(\)\[\]\<\>`\'…》：]', '', text)
@@ -24,21 +26,25 @@ class tmdb(object):
 
     @classmethod
     def search(cls, keyword, year=None):
+
         tmdb.API_KEY = 'f090bb54758cabf231fb605d3e3e0468'
+
+        if keyword in cls.cache:
+            return cls.cache[keyword]
+
         if SiteUtil.is_include_hangul(keyword):
-            tmdb_search = tmdbsimple.Search().tv(query=keyword, language='ko', include_adult=True)
+            tmdb_search = tmdb.Search().tv(query=keyword, language='ko', include_adult=True)
         else:
-            tmdb_search = tmdbsimple.Search().tv(query=keyword, language='en', include_adult=True)
+            tmdb_search = tmdb.Search().tv(query=keyword, language='en', include_adult=True)
+
         tmdb_code = ''
-        if tmdb_search['results'] != []:
-            if year == None:
+        if tmdb_search['results']:
+            if year is None:
                 score_list = []
                 for t in tmdb_search['results']:
-                    score_list.append(max(cls.similar(t['name'], keyword), cls.similar(t['original_name'], keyword))) 
-                if max(score_list) > 0.7 :
+                    score_list.append(max(cls.similar(t['name'], keyword), cls.similar(t['original_name'], keyword)))
+                if max(score_list) > 0.7:
                     tmdb_code = tmdb_search['results'][score_list.index(max(score_list))]['id']
-                else:
-                    tmdb_code = tmdb_search['results'][0]['id']
             else:
                 for t in tmdb_search['results']:
                     try:
@@ -46,13 +52,13 @@ class tmdb(object):
                     except:
                         tmdb_year = 1900
 
-                    if tmdb_year == int(year) :
+                    if tmdb_year == int(year):
                         tmdb_code = t['id']
                         break
-                    else:
-                        continue
                 if tmdb_code == '':
                     tmdb_code = tmdb_search['results'][0]['id']
+
+            cls.cache[keyword] = tmdb_code
             return tmdb_code
 
         elif tmdb_search['results'] == [] and SiteUtil.is_include_hangul(keyword):
@@ -64,16 +70,13 @@ class tmdb(object):
 
     @classmethod
     def search_watcha(cls, keyword, year=None):
-        ret = {}
-        ret['ret'] == 'empty'
+        ret = {'ret': 'empty', 'data': None}
         watcha_ret = SiteWatchaTv.search(keyword, year=year)
-        if cls.similar(keyword, watcha_ret['data'][0]['title_en']) > 0.85:
-            ret['ret'] == 'success'
+        if watcha_ret and cls.similar(keyword, watcha_ret['data'][0]['title_en']) > 0.85:
+            ret['ret'] = 'success'
             en_keyword = watcha_ret['data'][0]['title_en']
-        else:
-            en_keyword = None
-        if en_keyword is not None:
-            tmdb_ret = SiteTmdbFtv.search(en_keyword, year=year)
-            if tmdb_ret['ret'] == 'success':
-                ret += tmdb_ret['data']
+            if en_keyword:
+                tmdb_ret = SiteTmdbFtv.search(en_keyword, year=year)
+                if tmdb_ret['ret'] == 'success':
+                    ret['data'] = tmdb_ret['data']
         return ret
