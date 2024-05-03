@@ -33,9 +33,9 @@ class tmdb(object):
             return cls.cache[keyword]
 
         if SiteUtil.is_include_hangul(keyword):
-            tmdb_search = tmdbsimple.Search().tv(query=keyword, language='ko', include_adult=True)
+            tmdb_search = tmdb.Search().tv(query=keyword, language='ko', include_adult=True)
         else:
-            tmdb_search = tmdbsimple.Search().tv(query=keyword, language='en', include_adult=True)
+            tmdb_search = tmdb.Search().tv(query=keyword, language='en', include_adult=True)
 
         tmdb_code = ''
         if tmdb_search['results']:
@@ -80,3 +80,4 @@ class tmdb(object):
                 if tmdb_ret['ret'] == 'success':
                     ret['data'] = tmdb_ret['data']
         return ret
+
