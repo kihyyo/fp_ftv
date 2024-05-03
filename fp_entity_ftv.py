@@ -128,7 +128,7 @@ class EntityFtv(object):
             logger.debug('TMDB 코드: %s', tmdb_code)
             if tmdb_code:
                 tmdb_code = 'FT' + str(tmdb_code)
-                if tmdb_code in self.info_cache:
+                if tmdb_code in info_cache:
                     info_result = self.info_cache[tmdb_code]
                 else:
                     info_result = SiteTmdbFtv.info(tmdb_code)
