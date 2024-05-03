@@ -18,7 +18,8 @@ REGEXS = [
 ]
 
 class EntityFtv(object):
-    meta_cache = {}
+
+   info_cache = {}
     def __init__(self, filename, dirname=None, meta=False, is_title=False, config=None):
         self.data = {
             'filename' : {
@@ -125,13 +126,23 @@ class EntityFtv(object):
             tmdb_code = tmdb.search(keyword, year)
         try:
             logger.debug('TMDB 코드: %s', tmdb_code)
-            if tmdb_code != None and tmdb_code != '':
-                tmdb_code = 'FT'+str(tmdb_code)
-                if SiteTmdbFtv.info(tmdb_code)['ret'] == 'success':
-                    self.data['meta']['info'] = SiteTmdbFtv.info(tmdb_code)['data']
-                    self.data['meta']['find'] = True
+        if tmdb_code:
+            tmdb_code = 'FT' + str(tmdb_code)
+            if tmdb_code in self.info_cache:
+                info_result = self.info_cache[tmdb_code]
+            else:
+                info_result = SiteTmdbFtv.info(tmdb_code)
+                self.info_cache[tmdb_code] = info_result
+
+            # 로그와 데이터 처리
+            logger.debug('TMDB 코드: %s', tmdb_code)
+            if info_result['ret'] == 'success':
+                self.data['meta']['info'] = info_result['data']
+                self.data['meta']['find'] = True
             else:
                 self.data['meta']['find'] = False
+        else:
+            self.data['meta']['find'] = False
         except Exception as e:
             logger.error(f"Exception:{str(e)}")
             logger.error(traceback.format_exc())
