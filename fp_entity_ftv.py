@@ -116,7 +116,7 @@ class EntityFtv(object):
             year = None
             match = re.search('\d{4}', keyword)
             if match and 1950 < int(match.group()) < datetime.date.today().year + 1:
-                keyword = keyword.replace(match.group(), '').replace('\(\)','').strip()
+                keyword = keyword.replace(match.group(), '').strip()
                 year = match.group()
         logger.debug('검색어: %s', keyword)
         tmdb_code = ''
@@ -126,26 +126,20 @@ class EntityFtv(object):
             tmdb_code = tmdb.search(keyword, year)
         try:
             logger.debug('TMDB 코드: %s', tmdb_code)
-            if tmdb_code:
-                tmdb_code = 'FT' + str(tmdb_code)
+            if tmdb_code != None and tmdb_code != '':
+                tmdb_code = 'FT'+str(tmdb_code)
                 if tmdb_code in info_cache:
-                    info_result = self.info_cache[tmdb_code]
-                else:
-                    info_result = SiteTmdbFtv.info(tmdb_code)
-                    self.info_cache[tmdb_code] = info_result
-    
-                # 로그와 데이터 처리
-                logger.debug('TMDB 코드: %s', tmdb_code)
-                if info_result['ret'] == 'success':
-                    self.data['meta']['info'] = info_result['data']
+                    SiteTmdbFtv.info(tmdb_code) = info_cache[tmdb_code]
+                elif SiteTmdbFtv.info(tmdb_code)['ret'] == 'success':
+                    self.data['meta']['info'] = SiteTmdbFtv.info(tmdb_code)['data']
+                    info_cache[tmdb_code] = SiteTmdbFtv.info(tmdb_code)
                     self.data['meta']['find'] = True
-                else:
-                    self.data['meta']['find'] = False
             else:
                 self.data['meta']['find'] = False
         except Exception as e:
             logger.error(f"Exception:{str(e)}")
             logger.error(traceback.format_exc())
+
 
 
 
