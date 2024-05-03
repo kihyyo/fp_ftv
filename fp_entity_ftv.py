@@ -110,21 +110,22 @@ class EntityFtv(object):
         self.data['filename']['name'] = name
 
     def find_meta(self, keyword=False):
-        if keyword == False:
-            keyword = self.data['filename']['name']
-            year = None
-            match = re.search('\d{4}', keyword)
-            if match and 1950 < int(match.group()) < datetime.date.today().year + 1:
-                keyword = keyword.replace(match.group(), '').strip()
-                year = match.group()
-        logger.debug('검색어: %s', keyword)
-        if tmdb_code != None and tmdb_code != '':
-            tmdb_code = 'FT'+str(tmdb_code)
-            if SiteTmdbFtv.info(tmdb_code)['ret'] == 'success':
-                self.data['meta']['info'] = SiteTmdbFtv.info(tmdb_code)['data']
-                self.data['meta']['find'] = True
-            else:
-                self.data['meta']['find'] = False
+        try:
+            if keyword == False:
+                keyword = self.data['filename']['name']
+                year = None
+                match = re.search('\d{4}', keyword)
+                if match and 1950 < int(match.group()) < datetime.date.today().year + 1:
+                    keyword = keyword.replace(match.group(), '').strip()
+                    year = match.group()
+            logger.debug('검색어: %s', keyword)
+            if tmdb_code != None and tmdb_code != '':
+                tmdb_code = 'FT'+str(tmdb_code)
+                if SiteTmdbFtv.info(tmdb_code)['ret'] == 'success':
+                    self.data['meta']['info'] = SiteTmdbFtv.info(tmdb_code)['data']
+                    self.data['meta']['find'] = True
+                else:
+                    self.data['meta']['find'] = False
         except Exception as e:
             logger.error(f"Exception:{str(e)}")
             logger.error(traceback.format_exc())
