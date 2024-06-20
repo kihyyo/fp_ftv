@@ -1,7 +1,7 @@
 title: "해외TV 파일처리"
 version: "1.0.0"
 package_name: "fp_ftv"
-developer: "flaskfarm"
+developer: "kihyyo"
 description: "해외TV 영상 파일 전용 파일처리"
 home: "https://github.com/kihyyo/fp_ftv"
 more: "https://raw.githubusercontent.com/kihyyo/fp_ftv/main/README.md"
