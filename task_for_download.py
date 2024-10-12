@@ -129,13 +129,7 @@ class Task(object):
         return final_scan_list
 
     def plex_scan(plex_scan_list, config, db_item):
-        temp_dict = {}
-        for item in plex_scan_list:
-            temp_dict[item['key']] = item['value']
-        final_scan_list = []
-        for key, value in temp_dict.items():
-            final_path = os.path.join(key, value)
-            final_scan_list.append(final_path)
+        logger.debug(plex_scan_list)
         for plex_info in config.get('PLEX_MATE_SCAN'):
             for plex_target in plex_scan_list:
                 url = f"{plex_info['URL']}/plex_mate/api/scan/do_scan"
@@ -400,7 +394,7 @@ class Task(object):
                             if P.ModelSetting.get_bool('basic_make_show_yaml'):
                                 Task.get_yaml(db_item)
                             if config.get('PLEX_MATE_SCAN') != None:
-                                plex_scan_list.append(db_item.result_folder)
+                                plex_scan_list.append({db_item.result_folder: db_item.result_filename})
                         else:
                             sub_x_folder = config['경로 설정']['sub_x'].format(**default_folder_folder)
                             db_item.result_folder = sub_x_folder
