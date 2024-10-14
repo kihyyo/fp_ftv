@@ -389,7 +389,7 @@ class Task(object):
                             db_item.status = "MOVE_BY_META"
                             if db_item.include_kor_file_subtitle == True :
                                 for source_subtitle in subtitle_list:
-                                    Task.dedupe_move(source_subtitle, program_folder, os.path.basename(source_subtitle))
+                                    Task.dedupe_move(source_subtitle, program_folder, os.path.splitext(target_filename)[0]+'.ko'+os.path.splitext(os.path.basename(source_subtitle))[1])
                             Task.dedupe_move(source_path, program_folder, target_filename)
                             if P.ModelSetting.get_bool('basic_make_show_yaml'):
                                 Task.get_yaml(db_item)
