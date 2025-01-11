@@ -56,9 +56,8 @@ class tmdb(object):
                         break
                     else:
                         continue
-                if tmdb_code == '':
-                    tmdb_code = tmdb_search['results'][0]['id']
-                    meta_cache[keyword] = tmdb_code
+                        
+            meta_cache[keyword] = tmdb_code
             return tmdb_code
 
         elif tmdb_search['results'] == [] and SiteUtil.is_include_hangul(keyword):
