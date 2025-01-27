@@ -128,9 +128,9 @@ class EntityFtv(object):
                 self.data['meta']['find'] = False
         else:
             if year == None:
-                tmdb_code = tmdb.search(keyword)
+                tmdb_code = tmdb.search(keyword, is_show = True)
             else:
-                tmdb_code = tmdb.search(keyword, year)
+                tmdb_code = tmdb.search(keyword, is_show = True, year)
             try:
                 logger.debug('TMDB 코드: %s', tmdb_code)
                 if tmdb_code != None and tmdb_code != '':
