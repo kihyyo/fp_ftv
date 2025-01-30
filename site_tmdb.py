@@ -27,39 +27,71 @@ class tmdb(object):
 
         tmdb.API_KEY = 'f090bb54758cabf231fb605d3e3e0468'
 
-        if keyword in meta_cache:
-            return meta_cache[keyword]
+        cache_key = (keyword, year)
 
-        if SiteUtil.is_include_hangul(keyword):
-            tmdb_search = tmdbsimple.Search().tv(query=keyword, language='ko', include_adult=True)
-        else:
-            tmdb_search = tmdbsimple.Search().tv(query=keyword, language='en', include_adult=True)
+        if cache_key in meta_cache:
+            return meta_cache[cache_key]
+
+        lang = 'ko' if SiteUtil.is_include_hangul(keyword) else 'en'
+        tmdb_search = tmdbsimple.Search().tv(query=keyword, language=lang, include_adult=True)
+
         tmdb_code = ''
-        if tmdb_search['results'] != []:
+        if tmdb_search['results'] :
+            results = tmdb_search['results']
             if year == None:
                 score_list = []
                 for t in tmdb_search['results']:
-                    score_list.append(max(cls.similar(t['name'], keyword), cls.similar(t['original_name'], keyword))) 
-                if max(score_list) > 0.7 :
-                    tmdb_code = tmdb_search['results'][score_list.index(max(score_list))]['id']
+                    score_list.append(
+                        max(similar(t.get(key_name, ''), keyword), similar(t.get(key_original, ''), keyword)))
+                max_score = max(score_list)
+                if max_score > 0.85:
+                    max_indices = [i for i, score in enumerate(score_list) if score == max_score]
+                    if len(max_indices) == 1:
+                        tmdb_code = results[max_indices[0]]['id']
+                    else:
+                        recent_result = None
+                        for index in max_indices:
+                            t = results[index]
+                            try:
+                                tmdb_year = int(t['first_air_date'].split('-')[0]) if is_show else int(t['release_date'].split('-')[0])
+                            except:
+                                tmdb_year = 1900
+                            if recent_result is None or tmdb_year > recent_result[1]:
+                                recent_result = (t['id'], tmdb_year)
+                        tmdb_code = recent_result[0]
                 else:
-                    tmdb_code = tmdb_search['results'][0]['id']
+                    tmdb_code = results[0]['id']
             else:
-                for t in tmdb_search['results']:
+                results_with_similarity = []
+                for t in results:
                     try:
-                        tmdb_year = int(t['first_air_date'].split('-')[0])
+                        tmdb_year = int(t['first_air_date'].split('-')[0]) if is_show else int(t['release_date'].split('-')[0])
                     except:
                         tmdb_year = 1900
-
-                    if tmdb_year == int(year) :
-                        tmdb_code = t['id']
+                    similarity_score = max(similar(t.get(key_name, ''), keyword), similar(t.get(key_original, ''), keyword))
+                    results_with_similarity.append((t['id'], tmdb_year, similarity_score))
+                results_with_similarity.sort(key=lambda x: x[2], reverse=True)
+                for tmdb_id, tmdb_year, similarity_score in results_with_similarity:
+                    if similarity_score >= 0.85 and tmdb_year == int(year):
+                        tmdb_code = tmdb_id
                         break
-                    else:
-                        continue
-                if tmdb_code == '':
-                    tmdb_code = tmdb_search['results'][0]['id']
-                    meta_cache[keyword] = tmdb_code
-            return tmdb_code
+
+                if not tmdb_code:
+                    for tmdb_id, tmdb_year, similarity_score in results_with_similarity:
+                        if similarity_score >= 0.85 and abs(tmdb_year - int(year)) == 1:
+                            tmdb_code = tmdb_id
+                            break
+
+                if not tmdb_code:
+                    for tmdb_id, tmdb_year, similarity_score in results_with_similarity:
+                        if similarity_score >= 0.85 and abs(tmdb_year - int(year)) == 2:
+                            tmdb_code = tmdb_id
+                            break
+
+                if not tmdb_code:
+                    tmdb_code = results[0]['id']
+
+
 
         elif tmdb_search['results'] == [] and SiteUtil.is_include_hangul(keyword):
             try:
@@ -67,6 +99,10 @@ class tmdb(object):
                     cls.search(keyword=keyword, year=year)
             except:
                 pass
+
+        meta_cache[cache_key] = tmdb_code
+        return tmdb_code
+
 
     @classmethod
     def search_watcha(cls, keyword, year=None):
