@@ -42,7 +42,7 @@ class tmdb(object):
                 score_list = []
                 for t in tmdb_search['results']:
                     score_list.append(
-                        max(similar(t.get(key_name, ''), keyword), similar(t.get(key_original, ''), keyword)))
+                        max(cls.similar(t.get(key_name, ''), keyword), cls.similar(t.get(key_original, ''), keyword)))
                 max_score = max(score_list)
                 if max_score > 0.85:
                     max_indices = [i for i, score in enumerate(score_list) if score == max_score]
@@ -68,7 +68,7 @@ class tmdb(object):
                         tmdb_year = int(t['first_air_date'].split('-')[0]) if is_show else int(t['release_date'].split('-')[0])
                     except:
                         tmdb_year = 1900
-                    similarity_score = max(similar(t.get(key_name, ''), keyword), similar(t.get(key_original, ''), keyword))
+                    similarity_score = max(cls.similar(t.get(key_name, ''), keyword), cls.similar(t.get(key_original, ''), keyword))
                     results_with_similarity.append((t['id'], tmdb_year, similarity_score))
                 results_with_similarity.sort(key=lambda x: x[2], reverse=True)
                 for tmdb_id, tmdb_year, similarity_score in results_with_similarity:
