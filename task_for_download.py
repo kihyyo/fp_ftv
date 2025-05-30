@@ -385,6 +385,17 @@ class Task(object):
                                 db_item.include_kor_file_subtitle = False
                         if db_item.include_kor_file_subtitle == True or db_item.include_kor_subtitle == True or db_item.is_vod == True or db_item.include_kor_audio == True :
                             db_item.result_folder = program_folder
+                            if db_item.target_season:
+                                match = re.search(r'^(Season|시즌)\s(?P<force_season_num>\d{1,8})((\s|\.)?(?P<season_title>.*?))?$', db_item.target_season.strip(), re.IGNORECASE)
+                                if match:
+                                    force_season_num = int(match.group('force_season_num'))
+                                    if force_season_num >= 100:
+                                        original_season_match = re.search(r'([sS])(\d{2})([eE]\d{2})', target_filename)
+                                        if original_season_match:
+                                            season_prefix, season_str, episode_str = original_season_match.groups()
+                                            new_season_num = force_season_num
+                                            new_season_str = f"S{new_season_num:03d}" if season_prefix.isupper() else f"s{new_season_num:03d}"
+                                            target_filename = re.sub(r'([sS])\d{2}([eE]\d{2})', new_season_str + episode_str, target_filename, count=1)
                             db_item.result_filename = target_filename
                             db_item.status = "MOVE_BY_META"
                             if db_item.include_kor_file_subtitle == True :
