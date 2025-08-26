@@ -53,7 +53,7 @@ class tmdb(object):
                         for index in max_indices:
                             t = results[index]
                             try:
-                                tmdb_year = int(t['first_air_date'].split('-')[0]) if is_show else int(t['release_date'].split('-')[0])
+                                tmdb_year = int(t['first_air_date'].split('-')[0]))
                             except:
                                 tmdb_year = 1900
                             if recent_result is None or tmdb_year > recent_result[1]:
@@ -65,7 +65,7 @@ class tmdb(object):
                 results_with_similarity = []
                 for t in results:
                     try:
-                        tmdb_year = int(t['first_air_date'].split('-')[0]) if is_show else int(t['release_date'].split('-')[0])
+                        tmdb_year = int(t['first_air_date'].split('-')[0]))
                     except:
                         tmdb_year = 1900
                     similarity_score = max(cls.similar(t.get('name', ''), keyword), cls.similar(t.get('original_name', ''), keyword))
@@ -114,4 +114,5 @@ class tmdb(object):
                 if tmdb_ret['ret'] == 'success':
                     ret['data'] = tmdb_ret['data']
         return ret
+
 
